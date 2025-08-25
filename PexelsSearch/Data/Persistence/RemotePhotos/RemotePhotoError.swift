@@ -7,7 +7,6 @@
 
 
 enum RemotePhotoError: Error {
-    case fetchFailed
     case decodingFailed
     case networkUnavailable
     case serverError(statusCode: Int)
