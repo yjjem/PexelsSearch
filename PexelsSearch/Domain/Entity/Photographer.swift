@@ -9,7 +9,7 @@
 import Foundation
 
 struct Photographer {
-    let id: UUID
+    let id: Int
     let name: String
     let profile: String
 }

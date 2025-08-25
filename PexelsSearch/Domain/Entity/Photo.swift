@@ -11,7 +11,6 @@ struct Photo {
     let height: Int
     let url: String
     let title: String
-    let description: String
     let averageColor: String
     let photographer: Photographer
     let source: PhotoSource

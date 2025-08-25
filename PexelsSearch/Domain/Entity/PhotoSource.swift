@@ -1,5 +1,5 @@
 //
-//  PhotoResource.swift
+//  PhotoSource.swift
 //  PexelsSearch
 //
 //  Created by Remy Park on 8/25/25.
@@ -9,7 +9,7 @@
 struct PhotoSource {
     let original: String
     let large2x: String
-    let larger: String
+    let large: String
     let medium: String
     let small: String
     let portrait: String
