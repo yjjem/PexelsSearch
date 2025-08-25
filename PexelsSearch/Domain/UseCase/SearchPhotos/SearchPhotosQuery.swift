@@ -5,7 +5,7 @@
 //  Created by Remy Park on 8/25/25.
 //
 
-enum PhotoSize {
+enum PhotoSize: String {
     case small
     case medium
     case large
@@ -20,7 +20,7 @@ enum PhotoColor{
     case hex(String)
 }
 
-enum PhotoOrientation {
+enum PhotoOrientation: String {
     case landscape
     case portrait
     case square
