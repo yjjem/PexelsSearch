@@ -10,7 +10,6 @@ import Combine
 
 final class DefaultPhotoRepository: PhotoRepository {
     
-    
     // MARK: Variable(s)
     
     private var page: Int = 0
@@ -28,6 +27,7 @@ final class DefaultPhotoRepository: PhotoRepository {
     func searchPhotos(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError> {
         return photoPersistence
             .fetchPhotos(SearchPhotosRequest(from: query, page: page, perPage: perPage))
+            .handleEvents(receiveOutput: incrementPage)
             .mapError { remotePhotoError in
                 switch remotePhotoError {
                 case .decodingFailed:
@@ -71,5 +71,13 @@ final class DefaultPhotoRepository: PhotoRepository {
                 }
             }
             .eraseToAnyPublisher()
+    }
+    
+    // MARK: Private Function(s)
+    
+    private func incrementPage(_ response: SearchPhotosResponse) {
+        if response.hasNext {
+            self.page = response.nextPageIndex
+        }
     }
 }

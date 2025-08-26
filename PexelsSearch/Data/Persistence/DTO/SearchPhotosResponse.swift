@@ -13,4 +13,12 @@ struct SearchPhotosResponse: Decodable {
     let totalResults: Int
     let prevPage: String?
     let nextPage: String?
+    
+    var hasNext: Bool {
+        return nextPage != nil
+    }
+    
+    var nextPageIndex: Int {
+        return page + 1
+    }
 }
