@@ -9,5 +9,5 @@
 enum SearchPhotosError: Error {
     case invalidQuery(message: String)
     case notFound
-    case unexpected(message: String)
+    case unexpected(message: String?)
 }

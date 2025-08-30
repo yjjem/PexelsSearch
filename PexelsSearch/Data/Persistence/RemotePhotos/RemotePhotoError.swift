@@ -10,5 +10,5 @@ enum RemotePhotoError: Error {
     case decodingFailed
     case networkUnavailable
     case serverError(statusCode: Int)
-    case unexpected(message: String)
+    case unexpected(message:String?)
 }
