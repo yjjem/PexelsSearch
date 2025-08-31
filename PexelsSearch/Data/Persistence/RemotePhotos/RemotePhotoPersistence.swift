@@ -54,17 +54,17 @@ final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
                         case .badHTTPResponse(let httpResponse):
                             return .serverError(statusCode: httpResponse.statusCode)
                         case .notHttpResponse(_), .requestConversionFailure(_), .unexpected(_):
-                            return .unexpected()
+                            return .unexpected(message: "")
                         case .urlError(let urlError):
                             switch urlError.code {
                             case .networkConnectionLost, .notConnectedToInternet:
                                 return .networkUnavailable
                         default:
-                                return .unexpected()
+                                return .unexpected(message: "")
                         }
                     }
                     default:
-                    return .unexpected()
+                    return .unexpected(message: "")
                 }
             }
             .eraseToAnyPublisher()
