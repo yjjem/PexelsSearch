@@ -1,5 +1,5 @@
 //
-//  AppCoordinator.swift
+//  SearchCoordinator.swift
 //  PexelsSearch
 //
 //  Created by Remy Park on 8/30/25.
