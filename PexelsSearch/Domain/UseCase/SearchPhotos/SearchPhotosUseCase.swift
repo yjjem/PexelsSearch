@@ -32,15 +32,15 @@ final class DefaultSearchPhotosUseCase: SearchPhotosUseCase {
                 .eraseToAnyPublisher()
         }
         
-        guard query.locale.isValid else {
+        guard !query.locale.isValid else {
             return SearchPhotosError
                 .invalidQuery(message: "Invalid locale")
                 .toFailurePublisher()
                 .eraseToAnyPublisher()
         }
         
-        guard PhotoColor.supportedColors.contains(where: { $0 == query.color}) else {
-            guard query.color.isValidHexCode else {
+        guard !query.color.isSupportedColor else {
+            guard !query.color.isValidHexCode else {
                 return SearchPhotosError
                     .invalidQuery(message: "Invalid hex code")
                     .toFailurePublisher()

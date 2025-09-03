@@ -31,6 +31,16 @@ struct SearchPhotosQuery {
     let color: PhotoColor
     let orientation: PhotoOrientation
     
+    init(query: String, locale: String, size: String, color: String, orientation: String) {
+        self.query = query
+        self.locale = PhotoLocale(locale: locale)
+        self.size = PhotoSize(size: size)
+        self.color = PhotoColor(color: color)
+        self.orientation = PhotoOrientation(orientation: orientation)
+    }
+}
+
+extension SearchPhotosQuery {
     var localeString: String {
         return locale.locale
     }
@@ -46,18 +56,13 @@ struct SearchPhotosQuery {
     var orientationString: String {
         return orientation.orientation
     }
-    
-    init(query: String, locale: String, size: String, color: String, orientation: String) {
-        self.query = query
-        self.locale = PhotoLocale(locale: locale)
-        self.size = PhotoSize(size: size)
-        self.color = PhotoColor(color: color)
-        self.orientation = PhotoOrientation(orientation: orientation)
-    }
 }
 
 extension PhotoLocale {
     var isValid: Bool {
+        guard locale.isEmpty else {
+            return true
+        }
         return Locale.LanguageCode(locale).isISOLanguage
     }
 }
@@ -82,40 +87,43 @@ extension PhotoColor {
     static let black = PhotoColor(color: "black")
     static let gray = PhotoColor(color: "gray")
     static let white = PhotoColor(color: "white")
+    static let validHexCode: String = "/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/"
+    static let supportedColors: [PhotoColor] = [
+        PhotoColor.red,
+        PhotoColor.orange,
+        PhotoColor.yellow,
+        PhotoColor.green,
+        PhotoColor.turquoise,
+        PhotoColor.blue,
+        PhotoColor.violet,
+        PhotoColor.pink,
+        PhotoColor.brown,
+        PhotoColor.black,
+        PhotoColor.gray,
+        PhotoColor.white
+    ]
     
-    static var supportedColors: [PhotoColor] {
-        return [
-            PhotoColor.red,
-            PhotoColor.orange,
-            PhotoColor.yellow,
-            PhotoColor.green,
-            PhotoColor.turquoise,
-            PhotoColor.blue,
-            PhotoColor.violet,
-            PhotoColor.pink,
-            PhotoColor.brown,
-            PhotoColor.black,
-            PhotoColor.gray,
-            PhotoColor.white
-        ]
-    }
-    
-    static var validHexCode: String {
-        return "/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/"
-    }
-    
-    static func ==(lhs: PhotoColor, rhs: PhotoColor) -> Bool {
-        return lhs.color == rhs.color
+    var isSupportedColor: Bool {
+        guard color.isEmpty else {
+            return true
+        }
+        return PhotoColor.supportedColors.contains { $0 == self } || isValidHexCode
     }
     
     var isValidHexCode: Bool {
+        guard color.isEmpty else {
+            return true
+        }
         guard let regex = try? Regex(PhotoColor.validHexCode) else {
             preconditionFailure("Hex regex must be valid.")
         }
         return color.contains(regex)
     }
+    
+    static func ==(lhs: PhotoColor, rhs: PhotoColor) -> Bool {
+        return lhs.color == rhs.color
+    }
 }
-
 
 extension PhotoOrientation {
     static let landscape = PhotoOrientation(orientation: "landscape")
