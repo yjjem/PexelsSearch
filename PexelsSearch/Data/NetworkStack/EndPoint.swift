@@ -25,6 +25,12 @@ struct EndPoint {
     
     var queryItems: [URLQueryItem] {
         return query
+            .filter { _, value in
+                guard let value else {
+                    return false
+                }
+                return !value.isEmpty
+            }
             .compactMapValues { $0 }
             .map(URLQueryItem.init)
     }
