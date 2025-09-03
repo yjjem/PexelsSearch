@@ -28,8 +28,8 @@ enum PexelsAPI {
             message: defaultHTTPMessage,
             endpoint: EndPoint(
                 scheme: "https",
-                host: "pexels.api.com",
-                path: "vi/search/",
+                host: "api.pexels.com",
+                path: "/v1/search",
                 query: [
                     "query": query,
                     "orientation": orientation,
@@ -37,14 +37,9 @@ enum PexelsAPI {
                     "color": color,
                     "locale": locale,
                     "page": page,
-                    "perPage": perPage
+                    "per_page": perPage
                 ]
             )
         )
     }
-}
-
-
-func foo() {
-    let request = PexelsAPI.searchPhotosRequest(query: "")
 }
