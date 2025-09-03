@@ -15,3 +15,5 @@ struct PhotoViewModel {
         return "by \(photographer)"
     }
 }
+
+extension PhotoViewModel: Equatable { }
