@@ -26,34 +26,31 @@ final class DefaultSearchPhotosUseCase: SearchPhotosUseCase {
     
     func search(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError> {
         
-        guard query.query.isEmpty else {
+        guard !query.query.isEmpty else {
             return Just([])
                 .setFailureType(to: SearchPhotosError.self)
                 .eraseToAnyPublisher()
         }
         
-        guard Locale.LanguageCode(query.locale).isISOLanguage else {
+        guard query.locale.isValid else {
             return SearchPhotosError
                 .invalidQuery(message: "Invalid locale")
                 .toFailurePublisher()
                 .eraseToAnyPublisher()
         }
         
-        if case .hex(let hexString) = query.color {
-            let hexValidationPattern = "/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/"
-            guard let validHexCodeRegex = try? Regex(hexValidationPattern) else {
-                return SearchPhotosError
-                    .unexpected(message: "Something went wrong")
-                    .toFailurePublisher()
-                    .eraseToAnyPublisher()
-            }
-            
-            guard hexString.contains(validHexCodeRegex) else {
+        guard PhotoColor.supportedColors.contains(where: { $0 == query.color}) else {
+            guard query.color.isValidHexCode else {
                 return SearchPhotosError
                     .invalidQuery(message: "Invalid hex code")
                     .toFailurePublisher()
                     .eraseToAnyPublisher()
             }
+            
+            return SearchPhotosError
+                .invalidQuery(message: "\(query.colorString) is not supported color")
+                .toFailurePublisher()
+                .eraseToAnyPublisher()
         }
         
         return photoRepository.searchPhotos(query)
