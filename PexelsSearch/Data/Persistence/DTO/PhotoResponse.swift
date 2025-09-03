@@ -7,7 +7,7 @@
 
 
 struct PhotoResponse: Decodable {
-    let id: String
+    let id: Int
     let width: Int
     let height: Int
     let url: String
