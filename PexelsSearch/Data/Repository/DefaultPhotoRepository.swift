@@ -30,8 +30,8 @@ final class DefaultPhotoRepository: PhotoRepository {
             .handleEvents(receiveOutput: incrementPage)
             .mapError { remotePhotoError in
                 switch remotePhotoError {
-                case .decodingFailed:
-                    return .unexpected(message: "Something went wrong")
+                case .decodingFailed(let message):
+                    return .unexpected(message: message)
                 case .networkUnavailable:
                     return .unexpected(message: "Network unavailable")
                 case .unexpected(let message):

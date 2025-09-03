@@ -48,7 +48,7 @@ final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
             .mapError { error in
                 switch error.self {
                     case is DecodingError:
-                        return .decodingFailed
+                        return .decodingFailed("")
                     case let httpClientError as HTTPClientError:
                         switch httpClientError {
                         case .badHTTPResponse(let httpResponse):
@@ -59,12 +59,12 @@ final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
                             switch urlError.code {
                             case .networkConnectionLost, .notConnectedToInternet:
                                 return .networkUnavailable
-                        default:
+                            default:
                                 return .unexpected(message: "")
                         }
                     }
                     default:
-                    return .unexpected(message: "")
+                        return .unexpected(message: "")
                 }
             }
             .eraseToAnyPublisher()
