@@ -7,32 +7,13 @@
 
 
 import UIKit
+import Combine
 
 final class AppCoordinator: Coordinator {
     
     // MARK: Type(s)
     
-    typealias RootViewController = UITabBarController
-
-    enum Tabs: String, CaseIterable {
-        case search
-        
-        var image: UIImage? {
-            switch self {
-            case .search:
-                return UIImage(systemName: "magnifyingglass")
-            }
-        }
-        
-        var tab: UITab {
-            return UITab(title: rawValue, image: image, identifier: rawValue) { tab in
-                switch self {
-                case .search:
-                    return ViewController()
-                }
-            }
-        }
-    }
+    typealias RootViewController = SearchViewController
     
     // MARK: Property(s)
     
@@ -41,24 +22,26 @@ final class AppCoordinator: Coordinator {
     }
     
     var rootCoordinator: (any Coordinator)?
-    var rootViewController: UITabBarController?
+    var rootViewController: RootViewController?
     var childCoordinators: [ObjectIdentifier : any Coordinator] = [:]
     
     private let window: UIWindow
+    private let applicationDependency: ApplicationDependencyContainer
     
-    init(window: UIWindow) {
+    init(window: UIWindow, applicationDependency: ApplicationDependencyContainer) {
         self.window = window
-        self.rootViewController = UITabBarController(tabs: Tabs.allCases.map { $0.tab })
+        self.applicationDependency = applicationDependency
     }
     
     // MARK: Function(s)
-    
     
     func start() {
         let tabBarAppearance: UITabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        let searchDependency = applicationDependency.makeSearchSceneDependency()
+        self.rootViewController =  searchDependency.makeSearchViewController()
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
     }
