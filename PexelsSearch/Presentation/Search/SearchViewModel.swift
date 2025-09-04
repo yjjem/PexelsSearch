@@ -46,7 +46,6 @@ final class SearchViewModel {
             .removeDuplicates()
             .debounce(for: 1, scheduler: RunLoop.main)
             .sink { [weak self] query in
-                print(query, query.isEmpty)
                 guard !query.isEmpty else {
                     self?.loadingState = .idle
                     return
@@ -64,32 +63,32 @@ final class SearchViewModel {
             query: queryString,
             searchPhotoFilter: searchPhotoFilter
         )
-        searchPhotosUseCase.search(searchQuery)
-        .sink { [weak self] completion in
-            print(completion)
-            if case .failure(let errorCases) = completion {
-                let failureState: FailureState
-                switch errorCases {
-                case .invalidQuery(message: _):
-                    failureState = .invalidQuery
-                case .notFound:
-                    failureState = .resultsNotFound
-                case .unexpected(message: _):
-                    failureState = .somethingWentWrong
+        searchPhotosUseCase
+            .search(searchQuery)
+            .sink { [weak self] completion in
+                if case .failure(let errorCases) = completion {
+                    let failureState: FailureState
+                    switch errorCases {
+                    case .invalidQuery(message: _):
+                        failureState = .invalidQuery
+                    case .notFound:
+                        failureState = .resultsNotFound
+                    case .unexpected(message: _):
+                        failureState = .somethingWentWrong
+                    }
+                    self?.loadingState = .failed(failureState)
                 }
-                self?.loadingState = .failed(failureState)
+            } receiveValue: { [weak self] photos in
+                let photoViewModels = photos.map { photo in
+                    PhotoViewModel(
+                        description: photo.title,
+                        photographer: photo.photographer.name,
+                        photoURL: photo.source.original
+                    )
+                }
+                let searchResult = SearchResult(items: photoViewModels)
+                self?.loadingState = .loaded(searchResult)
             }
-        } receiveValue: { [weak self] photos in
-            let photoViewModels = photos.map { photo in
-                PhotoViewModel(
-                    description: photo.title,
-                    photographer: photo.photographer.name,
-                    photoURL: photo.source.original
-                )
-            }
-            let searchResult = SearchResult(items: photoViewModels)
-            self?.loadingState = .loaded(searchResult)
-        }
-        .store(in: &cancelBag)
+            .store(in: &cancelBag)
     }
 }

@@ -6,6 +6,8 @@
 //
 
 
+import Foundation
+
 struct PhotoViewModel {
     let description: String
     let photographer: String
@@ -16,4 +18,4 @@ struct PhotoViewModel {
     }
 }
 
-extension PhotoViewModel: Equatable { }
+extension PhotoViewModel: Equatable, Hashable { }
