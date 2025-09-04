@@ -13,6 +13,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
     
+    private let applicationDependency = ApplicationDependencyContainer()
     private var appCoordinator: AppCoordinator?
     
     // MARK: Function(s)
@@ -26,10 +27,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
         let window = UIWindow(windowScene: windowScene)
-        let appCoordinator = AppCoordinator(window: window)
-        appCoordinator.start()
+        let appCoordinator = AppCoordinator(
+            window: window,
+            applicationDependency: applicationDependency
+        )
         self.window = window
         self.appCoordinator = appCoordinator
+        
+        appCoordinator.start()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) { }
