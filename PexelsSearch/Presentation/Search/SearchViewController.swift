@@ -9,25 +9,29 @@ import UIKit
 import Combine
 
 final class SearchViewController: UIViewController {
-    
-    // MARK: Type(s)
-    
-    enum Section {
+    private enum Section {
         case main
     }
-    typealias PhotoCellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, PhotoViewModel>
-    typealias DataSource = UICollectionViewDiffableDataSource<Section, PhotoViewModel>
-    typealias SnapShot = NSDiffableDataSourceSnapshot<Section, PhotoViewModel>
+    private typealias PhotoCellRegistration = UICollectionView
+        .CellRegistration<UICollectionViewListCell, PhotoViewModel>
+    private typealias DataSource = UICollectionViewDiffableDataSource<Section, PhotoViewModel>
+    private typealias SnapShot = NSDiffableDataSourceSnapshot<Section, PhotoViewModel>
     
     // MARK: Property(s)
     
-    var viewModel: SearchViewModel?
+    private var viewModel: SearchViewModel?
     private var dataSource: DataSource?
     private var cancelBag: Set<AnyCancellable> = []
     private let collectionView: UICollectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: .init()
     )
+    
+    static func create(searchViewModel: SearchViewModel) -> SearchViewController {
+        let searchViewController = SearchViewController()
+        searchViewController.viewModel = searchViewModel
+        return searchViewController
+    }
     
     // MARK: Override(s)
     
