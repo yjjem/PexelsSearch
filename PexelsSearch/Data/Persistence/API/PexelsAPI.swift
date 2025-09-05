@@ -6,11 +6,25 @@
 //
 
 
+import Foundation
+
 enum PexelsAPI {
     
     // MARK: Variable(s)
+    
+    static let apiKey: String = {
+       guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "API_KEY") as? String
+        else{
+           preconditionFailure("API_KEY is not specified")
+       }
+        return apiKey
+    }()
 
     static let defaultHTTPMessage = HTTPRequestMessage(header: [:], body: nil)
+    static let authorizedHTTPMessage = HTTPRequestMessage(
+        header: ["Authorization": PexelsAPI.apiKey],
+        body: nil
+    )
     
     // MARK: Function(s)
     
