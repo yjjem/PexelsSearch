@@ -6,7 +6,7 @@
 //
 
 
-struct SearchPhotoFilter {
+struct PhotoSearchFilterViewModel {
     var color: String?
     var size: String?
     var orientation: String?

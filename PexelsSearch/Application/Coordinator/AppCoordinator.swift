@@ -13,7 +13,7 @@ final class AppCoordinator: Coordinator {
     
     // MARK: Type(s)
     
-    typealias RootViewController = SearchViewController
+    typealias RootViewController = PhotoSearchViewController
     
     // MARK: Property(s)
     
@@ -41,7 +41,7 @@ final class AppCoordinator: Coordinator {
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         let searchDependency = applicationDependency.makeSearchSceneDependency()
-        self.rootViewController =  searchDependency.makeSearchViewController()
+        self.rootViewController =  searchDependency.makePhotoSearchViewController()
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
     }

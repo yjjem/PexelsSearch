@@ -6,10 +6,10 @@
 //
 
 
-enum SearchQueryMapper {
+enum PhotoSearchQueryMapper {
     static func toDomain(
         query: String,
-        searchPhotoFilter: SearchPhotoFilter
+        searchPhotoFilter: PhotoSearchFilterViewModel
     ) -> SearchPhotosQuery {
         return SearchPhotosQuery(
             query: query,

@@ -36,9 +36,11 @@ final class SearchSceneDependencyContainer {
         return DefaultSearchPhotosUseCase(photoRepository: makePhotoRepository())
     }
     
-    func makeSearchViewController() -> SearchViewController {
-        let searchViewModel = SearchViewModel(searchPhotosUseCase: makeSearchPhotosUseCase())
-        let searchViewController = SearchViewController.create(searchViewModel: searchViewModel)
-        return searchViewController
+    func makePhotoSearchViewController() -> PhotoSearchViewController {
+        return PhotoSearchViewController.create(
+            searchViewModel: PhotoSearchViewModel(
+                searchPhotosUseCase: makeSearchPhotosUseCase()
+            )
+        )
     }
 }

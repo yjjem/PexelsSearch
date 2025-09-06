@@ -22,12 +22,12 @@ enum FailureState {
     case somethingWentWrong
 }
 
-final class SearchViewModel {
+final class PhotoSearchViewModel {
     
     // MARK: Variable(s)
     
     @Published var query: String = ""
-    @Published var searchPhotoFilter = SearchPhotoFilter()
+    @Published var searchPhotoFilter = PhotoSearchFilterViewModel()
     
     @Published private(set) var loadingState: SearchPhotoViewState = .idle
     @Published private(set) var photoSearchResults: [SearchResult<PhotoViewModel>] = []
@@ -59,7 +59,7 @@ final class SearchViewModel {
     
     private func search(_ queryString: String) {
         loadingState = .loading
-        let searchQuery = SearchQueryMapper.toDomain(
+        let searchQuery = PhotoSearchQueryMapper.toDomain(
             query: queryString,
             searchPhotoFilter: searchPhotoFilter
         )

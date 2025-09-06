@@ -8,7 +8,7 @@
 import UIKit
 import Combine
 
-final class SearchViewController: UIViewController {
+final class PhotoSearchViewController: UIViewController {
     private enum Section {
         case main
     }
@@ -19,7 +19,7 @@ final class SearchViewController: UIViewController {
     
     // MARK: Property(s)
     
-    private var viewModel: SearchViewModel?
+    private var viewModel: PhotoSearchViewModel?
     private var dataSource: DataSource?
     private var cancelBag: Set<AnyCancellable> = []
     private let collectionView: UICollectionView = UICollectionView(
@@ -27,8 +27,8 @@ final class SearchViewController: UIViewController {
         collectionViewLayout: .init()
     )
     
-    static func create(searchViewModel: SearchViewModel) -> SearchViewController {
-        let searchViewController = SearchViewController()
+    static func create(searchViewModel: PhotoSearchViewModel) -> PhotoSearchViewController {
+        let searchViewController = PhotoSearchViewController()
         searchViewController.viewModel = searchViewModel
         return searchViewController
     }
