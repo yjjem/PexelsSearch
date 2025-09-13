@@ -43,28 +43,16 @@ final class PhotoSearchViewModel {
     
     func bind() {
         $query
+            .debounce(for: 0.2, scheduler: RunLoop.main)
             .removeDuplicates()
-            .debounce(for: 1, scheduler: RunLoop.main)
-            .sink { [weak self] query in
-                guard !query.isEmpty else {
-                    self?.loadingState = .idle
-                    return
-                }
-                self?.search(query)
+            .map {query in
+                self.loadingState = .loading
+                return self.searchPhotosUseCase.search(PhotoSearchQueryMapper.toDomain(
+                    query: query,
+                    searchPhotoFilter: self.searchPhotoFilter
+                ))
             }
-            .store(in: &cancelBag)
-    }
-    
-    // MARK: Private Function(s)
-    
-    private func search(_ queryString: String) {
-        loadingState = .loading
-        let searchQuery = PhotoSearchQueryMapper.toDomain(
-            query: queryString,
-            searchPhotoFilter: searchPhotoFilter
-        )
-        searchPhotosUseCase
-            .search(searchQuery)
+            .switchToLatest()
             .sink { [weak self] completion in
                 if case .failure(let errorCases) = completion {
                     let failureState: FailureState
