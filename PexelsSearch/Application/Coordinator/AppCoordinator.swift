@@ -36,16 +36,33 @@ final class AppCoordinator: Coordinator {
     // MARK: Function(s)
     
     func start() {
+        configureAppAppearance()
+        window.rootViewController = createTabController()
+        window.makeKeyAndVisible()
+    }
+    
+    // MARK: Private Function(s)
+    
+    private func configureAppAppearance() {
         let tabBarAppearance: UITabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+    }
+    
+    private func createTabController() -> UITabBarController {
         let searchDependency = applicationDependency.makeSearchSceneDependency()
-        let photoSearch = searchDependency.makePhotoSearchViewController()
-        photoSearch.navigationItem.title = "Photos"
-        let navigationController = UINavigationController(rootViewController: photoSearch)
-        navigationController.navigationBar.prefersLargeTitles = true
-        window.rootViewController = navigationController
-        window.makeKeyAndVisible()
+        let searchTab = UITab(
+            title: "Search",
+            image: UIImage(systemName: "magnifyingglass"),
+            identifier: "search"
+        ) { tab in
+            let searchViewController = searchDependency.makePhotoSearchViewController()
+            searchViewController.navigationItem.title = "Photos"
+            let searchNavigation = UINavigationController(rootViewController: searchViewController)
+            searchNavigation.navigationBar.prefersLargeTitles = true
+            return searchNavigation
+        }
+        return UITabBarController(tabs: [searchTab])
     }
 }
