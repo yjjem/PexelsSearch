@@ -19,9 +19,12 @@ final class PhotoSearchViewController: UIViewController {
     
     // MARK: Property(s)
     
+    private var searchController: UISearchController?
+    private var cancelBag: Set<AnyCancellable> = []
     private var viewModel: PhotoSearchViewModel?
     private var dataSource: DataSource?
-    private var cancelBag: Set<AnyCancellable> = []
+    
+    private let loadingIndicator = UIActivityIndicatorView()
     private let collectionView: UICollectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: .init()
@@ -46,35 +49,73 @@ final class PhotoSearchViewController: UIViewController {
         super.viewDidAppear(animated)
         viewModel?
             .$loadingState
+            .print()
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 switch state {
                 case .loaded(let searchResult):
-                    guard var snapShot = self?.dataSource?.snapshot() else {
-                        return
+                    DispatchQueue.main.async {
+                        self?.addItems(searchResult.items)
                     }
-                    if snapShot.sectionIdentifiers.isEmpty {
-                        snapShot.appendSections([Section.main])
-                    }
-                    snapShot.appendItems(searchResult.items, toSection: .main)
-                    self?.dataSource?.apply(snapShot)
+                    self?.loadingIndicator.stopAnimating()
+                case .loading:
+                    self?.loadingIndicator.startAnimating()
                 default:
-                    return
+                    self?.loadingIndicator.stopAnimating()
                 }
-                
             }
             .store(in: &cancelBag)
-        viewModel?.query = "Forest and ocean"
     }
     
     // MARK: Private Function(s)
     
     private func buildViewLayout() {
         view.addSubview(collectionView)
+        let item = NSCollectionLayoutItem(
+            layoutSize: NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(0.333),
+                heightDimension: .estimated(1)
+            )
+        )
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .estimated(1)
+            ),
+            subitems: [item]
+        )
+        group.interItemSpacing = .fixed(10)
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = .init(top: 4, leading: 10, bottom: 4, trailing: 10)
+        section.interGroupSpacing = 10
+        let layout = UICollectionViewCompositionalLayout(section: section)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.layoutToSafeArea(of: view)
-        let config = UICollectionLayoutListConfiguration(appearance: .grouped)
-        let layout = UICollectionViewCompositionalLayout.list(using: config)
         collectionView.setCollectionViewLayout(layout, animated: true)
+        collectionView.toHorizontalSafeArea(view)
+        configureSearchController()
+        configureLoadingIndicator()
+    }
+    
+    private func configureLoadingIndicator() {
+        collectionView.addSubview(loadingIndicator)
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(
+                equalTo: collectionView.layoutMarginsGuide.centerXAnchor
+            ),
+            loadingIndicator.centerYAnchor.constraint(
+                equalTo: collectionView.layoutMarginsGuide.centerYAnchor
+            )
+        ])
+    }
+    
+    private func configureSearchController() {
+        let searchController = UISearchController()
+        searchController.delegate = self
+        searchController.searchResultsUpdater = self
+        collectionView.keyboardDismissMode = .onDrag
+        navigationItem.searchController = searchController
+        self.searchController = searchController
     }
     
     private func configureDataSource() {
@@ -94,11 +135,36 @@ final class PhotoSearchViewController: UIViewController {
         return PhotoCellRegistration {
             cell, indexPath, itemIdentifier in
             
-            var content = cell.defaultContentConfiguration()
-            content.text = itemIdentifier.description
-            content.secondaryText = itemIdentifier.byPhotographer
-            content.textProperties.numberOfLines = 1
+            var content = cell.photoCellConfiguration()
+            content.name = itemIdentifier.photographer
             cell.contentConfiguration = content
         }
+    }
+    
+    private func addItems(_ items: [PhotoViewModel]) {
+        guard var snapShot = self.dataSource?.snapshot() else {
+            return
+        }
+        if snapShot.sectionIdentifiers.isEmpty {
+            snapShot.appendSections([Section.main])
+        }
+        snapShot.appendItems(items, toSection: .main)
+        self.dataSource?.apply(snapShot)
+    }
+    
+    private func clearItems() {
+        if var snapShot = dataSource?.snapshot() {
+            snapShot.deleteAllItems()
+            self.dataSource?.apply(snapShot)
+        }
+    }
+}
+
+// MARK: UISearchResultsUpdating
+
+extension PhotoSearchViewController: UISearchResultsUpdating, UISearchControllerDelegate {
+    func updateSearchResults(for searchController: UISearchController) {
+        clearItems()
+        viewModel?.query = searchController.searchBar.text ?? ""
     }
 }
