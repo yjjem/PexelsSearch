@@ -18,9 +18,9 @@ extension UICollectionViewCell {
 }
 
 final class PhotoCellContentView: UIView, UIContentView {
-    struct Configuration: UIContentConfiguration {
+    struct Configuration: UIContentConfiguration, Equatable {
         var name: String = ""
-        var imagePublisher: AnyPublisher<UIImage, Never>?
+        var imageURL: String = ""
         
         func makeContentView() -> any UIView & UIContentView {
             return PhotoCellContentView(configuration: self)
@@ -39,6 +39,8 @@ final class PhotoCellContentView: UIView, UIContentView {
         }
     }
     
+    private var currentConfiguration: Configuration?
+    private var cancelBag = Set<AnyCancellable>()
     private let imageView = LoadableImageView()
     private let nameLabel = PaddableLabel()
     
@@ -57,7 +59,7 @@ final class PhotoCellContentView: UIView, UIContentView {
     
     private func configureLayout() {
         addSubview(imageView)
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 4
@@ -75,18 +77,27 @@ final class PhotoCellContentView: UIView, UIContentView {
         guard let configuration = configuration as? Configuration else {
             return
         }
+        
+        guard configuration != currentConfiguration else {
+            return
+        }
+        
+        self.imageView.image = nil
         self.imageView.layer.borderColor = UIColor.systemGray.cgColor
         self.imageView.layer.borderWidth = 0.2
         self.imageView.layer.masksToBounds = true
-        DispatchQueue.global().async {
-            if let url = URL(string: "https://picsum.photos/250/250"),
-               let data = try? Data(contentsOf: url) {
-                DispatchQueue.main.async {
-                    self.imageView.image = UIImage(data: data)
-                    self.nameLabel.text = configuration.name
+        if let url = URL(string: configuration.imageURL) {
+            ImageManager.shared
+                .image(for: url)
+                .receive(on: DispatchQueue.main)
+                .sink { completion in
+                    print(completion)
+                } receiveValue: { image in
+                    self.imageView.image = image
                 }
-            }
+                .store(in: &cancelBag)
         }
+        self.currentConfiguration = configuration
     }
 }
 

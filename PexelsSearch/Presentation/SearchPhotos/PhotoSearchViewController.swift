@@ -142,6 +142,7 @@ final class PhotoSearchViewController: UIViewController {
         return .init { cell, indexPath, itemIdentifier in
             var content = cell.photoCellConfiguration()
             content.name = itemIdentifier.photographer
+            content.imageURL = itemIdentifier.photoURL
             cell.contentConfiguration = content
         }
     }
