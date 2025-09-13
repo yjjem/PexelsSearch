@@ -26,7 +26,6 @@ final class PhotoSearchViewModel {
     
     // MARK: Variable(s)
     
-    @Published var query: String = ""
     @Published var searchPhotoFilter = PhotoSearchFilterViewModel()
     
     @Published private(set) var loadingState: SearchPhotoViewState = .idle
@@ -41,11 +40,12 @@ final class PhotoSearchViewModel {
     
     // MARK: Function(s)
     
-    func bind() {
-        $query
+    func bind(queryPublisher: AnyPublisher<String, Never>) {
+        queryPublisher
+            .print()
             .debounce(for: 0.2, scheduler: RunLoop.main)
             .removeDuplicates()
-            .map {query in
+            .compactMap { query in
                 self.loadingState = .loading
                 return self.searchPhotosUseCase.search(PhotoSearchQueryMapper.toDomain(
                     query: query,
