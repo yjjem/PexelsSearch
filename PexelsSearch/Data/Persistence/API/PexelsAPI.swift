@@ -13,9 +13,9 @@ enum PexelsAPI {
     // MARK: Variable(s)
     
     static let apiKey: String = {
-       guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "API_KEY") as? String
+       guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "PexelsAPIKey") as? String
         else{
-           preconditionFailure("API_KEY is not specified")
+           preconditionFailure("PexelsAPIKey is not specified")
        }
         return apiKey
     }()
@@ -39,7 +39,7 @@ enum PexelsAPI {
     ) -> HTTPRequest {
         return HTTPRequest(
             method: .get,
-            message: defaultHTTPMessage,
+            message: authorizedHTTPMessage,
             endpoint: EndPoint(
                 scheme: "https",
                 host: "api.pexels.com",
