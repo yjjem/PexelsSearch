@@ -42,7 +42,7 @@ final class AppCoordinator: Coordinator {
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         let searchDependency = applicationDependency.makeSearchSceneDependency()
         let photoSearch = searchDependency.makePhotoSearchViewController()
-        photoSearch.navigationItem.title = "Search"
+        photoSearch.navigationItem.title = "Photos"
         let navigationController = UINavigationController(rootViewController: photoSearch)
         navigationController.navigationBar.prefersLargeTitles = true
         window.rootViewController = navigationController
