@@ -20,6 +20,11 @@ final class PhotoSearchViewController: UIViewController {
     
     private var cancelBag: Set<AnyCancellable> = []
     private var viewModel: PhotoSearchViewModel?
+    private var searchStateConfiguration: UIContentUnavailableConfiguration? {
+        didSet {
+            self.contentUnavailableConfiguration = searchStateConfiguration
+        }
+    }
     
     private lazy var dataSource: DataSource = createDataSource()
     private let searchController = UISearchController()
@@ -60,11 +65,15 @@ final class PhotoSearchViewController: UIViewController {
                 switch state {
                 case .loaded(let searchResult):
                     self?.addItems(searchResult.items)
-                    self?.loadingIndicator.stopAnimating()
+                    if searchResult.items.isEmpty {
+                        self?.searchStateConfiguration = .search()
+                    } else {
+                        self?.searchStateConfiguration = nil
+                    }
                 case .loading:
-                    self?.loadingIndicator.startAnimating()
+                    self?.searchStateConfiguration = .loading()
                 default:
-                    self?.loadingIndicator.stopAnimating()
+                    self?.searchStateConfiguration = .search()
                 }
             }
             .store(in: &cancelBag)
@@ -91,6 +100,7 @@ final class PhotoSearchViewController: UIViewController {
     
     private func buildViewLayout() {
         view.addSubview(collectionView)
+        searchStateConfiguration = .search()
         collectionView.addSubview(loadingIndicator)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.toHorizontalSafeArea(view)
