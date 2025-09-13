@@ -26,4 +26,11 @@ extension UIView {
             bottomAnchor.constraint(equalTo: parentView.bottomAnchor),
         ])
     }
+    
+    func toCenter(_ parentView: UIView) {
+        NSLayoutConstraint.activate([
+            centerXAnchor.constraint(equalTo: parentView.centerXAnchor),
+            centerYAnchor.constraint(equalTo: parentView.centerYAnchor)
+        ])
+    }
 }
