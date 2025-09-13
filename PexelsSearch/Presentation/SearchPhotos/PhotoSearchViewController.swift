@@ -46,15 +46,20 @@ final class PhotoSearchViewController: UIViewController {
     // MARK: Private Function(s)
     
     private func bindViewModel() {
-        viewModel?.bind(queryPublisher: searchController.searchTextPublisher)
+        let searchTextPublisher = searchController.searchTextPublisher
+        searchTextPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.clearItems()
+            }
+            .store(in: &cancelBag)
+        viewModel?.bind(queryPublisher: searchTextPublisher)
         viewModel?.$loadingState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 switch state {
                 case .loaded(let searchResult):
-                    DispatchQueue.main.async {
-                        self?.addItems(searchResult.items)
-                    }
+                    self?.addItems(searchResult.items)
                     self?.loadingIndicator.stopAnimating()
                 case .loading:
                     self?.loadingIndicator.startAnimating()
@@ -162,6 +167,7 @@ final class PhotoSearchViewController: UIViewController {
     private func clearItems() {
         var snapShot = dataSource.snapshot()
         snapShot.deleteAllItems()
+        snapShot.appendSections([Section.main])
         dataSource.apply(snapShot)
     }
 }
