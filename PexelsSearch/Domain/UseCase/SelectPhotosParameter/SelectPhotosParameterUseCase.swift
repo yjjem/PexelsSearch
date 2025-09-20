@@ -7,7 +7,7 @@
 
 
 protocol SelectPhotosParameterUseCase {
-    func execute(_ selectedOption: PhotosParameterSelectOption)
+    func execute(_ selectedOption: PhotosParameterSelectOption) throws
 }
 
 final class DefaultSelectPhotosParameterUseCase: SelectPhotosParameterUseCase {
@@ -22,17 +22,17 @@ final class DefaultSelectPhotosParameterUseCase: SelectPhotosParameterUseCase {
     
     // MARK: Function(s)
     
-    func execute(_ selectedOption: PhotosParameterSelectOption) {
+    func execute(_ selectedOption: PhotosParameterSelectOption) throws {
         var parameterUpdates = repository.read()
         switch selectedOption.option {
         case .color:
-            parameterUpdates.selectColor(selectedOption.value)
+            try parameterUpdates.selectColor(selectedOption.value)
         case .orientation:
-            parameterUpdates.selectOrientation(selectedOption.value)
+            try parameterUpdates.selectOrientation(selectedOption.value)
         case .size:
-            parameterUpdates.selectSize(selectedOption.value)
+            try parameterUpdates.selectSize(selectedOption.value)
         case .locale:
-            parameterUpdates.selectLocale(selectedOption.value)
+            try parameterUpdates.selectLocale(selectedOption.value)
         }
         repository.save(parameterUpdates)
     }
