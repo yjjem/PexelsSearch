@@ -16,6 +16,10 @@ final class SearchSceneDependencyContainer {
     
     // MARK: Variable(s)
     
+    private lazy var photosParameterRepository: PhotosParameterRepository = {
+        return InMemoryPhotosParameterRepository()
+    }()
+    
     private let dependency: Dependency
     
     init(dependency: Dependency) {
@@ -33,7 +37,10 @@ final class SearchSceneDependencyContainer {
     }
     
     func makeSearchPhotosUseCase() -> SearchPhotosUseCase {
-        return DefaultSearchPhotosUseCase(photoRepository: makePhotoRepository())
+        return DefaultSearchPhotosUseCase(
+            photoRepository: makePhotoRepository(),
+            photosParameterRepository: photosParameterRepository
+        )
     }
     
     func makePhotoSearchViewController() -> PhotoSearchViewController {

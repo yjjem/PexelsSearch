@@ -40,13 +40,11 @@ final class PhotoSearchViewModel {
     
     func bind(queryPublisher: AnyPublisher<String, Never>) {
         queryPublisher
-            .print()
             .debounce(for: 0.2, scheduler: RunLoop.main)
             .removeDuplicates()
             .compactMap { query in
                 self.loadingState = .loading
-                return self.searchPhotosUseCase.search(.init(query: "", locale: "", size: "", color: "", orientation: "")
-                )
+                return self.searchPhotosUseCase.search(query)
             }
             .switchToLatest()
             .sink { [weak self] completion in

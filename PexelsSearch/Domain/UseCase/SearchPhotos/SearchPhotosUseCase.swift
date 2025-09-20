@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 protocol SearchPhotosUseCase {
-    func search(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError>
+    func search(_ query: String) -> AnyPublisher<[Photo], SearchPhotosError>
 }
 
 final class DefaultSearchPhotosUseCase: SearchPhotosUseCase {
@@ -17,42 +17,27 @@ final class DefaultSearchPhotosUseCase: SearchPhotosUseCase {
     // MARK: Variable(s)
     
     private let photoRepository: PhotoRepository
+    private let photosParameterRepository: PhotosParameterRepository
     
-    init(photoRepository: PhotoRepository) {
+    init(photoRepository: PhotoRepository, photosParameterRepository: PhotosParameterRepository) {
         self.photoRepository = photoRepository
+        self.photosParameterRepository = photosParameterRepository
     }
     
     // MARK: Function(s)
     
-    func search(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError> {
-        
-        guard !query.query.isEmpty else {
-            return Just([])
-                .setFailureType(to: SearchPhotosError.self)
-                .eraseToAnyPublisher()
+    func search(_ query: String) -> AnyPublisher<[Photo], SearchPhotosError> {
+        guard !query.isEmpty else {
+            return Empty().eraseToAnyPublisher()
         }
-        
-        guard !query.locale.isValid else {
-            return SearchPhotosError
-                .invalidQuery(message: "Invalid locale")
-                .toFailurePublisher()
-                .eraseToAnyPublisher()
-        }
-        
-        guard !query.color.isSupportedColor else {
-            guard !query.color.isValidHexCode else {
-                return SearchPhotosError
-                    .invalidQuery(message: "Invalid hex code")
-                    .toFailurePublisher()
-                    .eraseToAnyPublisher()
-            }
-            
-            return SearchPhotosError
-                .invalidQuery(message: "\(query.colorString) is not supported color")
-                .toFailurePublisher()
-                .eraseToAnyPublisher()
-        }
-        
+        let currentSearchPhotosParameter = photosParameterRepository.read()
+        let query = SearchPhotosQuery(
+            query: query,
+            locale: currentSearchPhotosParameter.locale,
+            size: currentSearchPhotosParameter.size,
+            color: currentSearchPhotosParameter.color,
+            orientation: currentSearchPhotosParameter.orientation
+        )
         return photoRepository.searchPhotos(query)
     }
 }
