@@ -30,12 +30,12 @@ enum PexelsAPI {
     
     static func searchPhotosRequest(
         query: String,
-        orientation: String? = nil,
-        size: String? = nil,
-        color: String? = nil,
-        locale: String? = nil,
-        page: String? = nil,
-        perPage: String? = nil
+        orientation: String,
+        size: String,
+        color: String,
+        locale: String,
+        page: String,
+        perPage: String
     ) -> HTTPRequest {
         return HTTPRequest(
             method: .get,
@@ -46,10 +46,10 @@ enum PexelsAPI {
                 path: "/v1/search",
                 query: [
                     "query": query,
-                    "orientation": orientation,
-                    "size": size,
-                    "color": color,
-                    "locale": locale,
+                    "orientation": orientation.isEmpty ? .none : query,
+                    "size": size.isEmpty ? .none : size,
+                    "color": color.isEmpty ? .none : color,
+                    "locale": locale.isEmpty ? .none : locale,
                     "page": page,
                     "per_page": perPage
                 ]
