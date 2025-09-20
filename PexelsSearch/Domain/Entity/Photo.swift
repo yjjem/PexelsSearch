@@ -7,6 +7,7 @@
 
 
 struct Photo {
+    let id: Int
     let width: Int
     let height: Int
     let url: String

@@ -67,7 +67,8 @@ final class PhotoSearchViewModel {
                     PhotoViewModel(
                         description: photo.title,
                         photographer: photo.photographer.name,
-                        photoURL: photo.source.tiny
+                        photoURL: photo.source.tiny,
+                        identifier: photo.id
                     )
                 }
                 let searchResult = SearchResult(items: photoViewModels)

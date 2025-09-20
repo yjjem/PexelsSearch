@@ -47,6 +47,7 @@ final class DefaultPhotoRepository: PhotoRepository {
             .map { searchPhotosResponse in
                 return searchPhotosResponse.photos.map { response in
                     Photo(
+                        id: response.id,
                         width: response.width,
                         height: response.height,
                         url: response.url,

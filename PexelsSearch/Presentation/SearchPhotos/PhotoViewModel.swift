@@ -12,6 +12,7 @@ struct PhotoViewModel {
     let description: String
     let photographer: String
     let photoURL: String
+    let identifier: Int
     
     var byPhotographer: String {
         return "by \(photographer)"
