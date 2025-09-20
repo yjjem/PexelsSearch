@@ -26,8 +26,6 @@ final class PhotoSearchViewModel {
     
     // MARK: Variable(s)
     
-    @Published var searchPhotoFilter = PhotoSearchFilterViewModel()
-    
     @Published private(set) var loadingState: SearchPhotoViewState = .idle
     @Published private(set) var photoSearchResults: [SearchResult<PhotoViewModel>] = []
     
@@ -47,10 +45,8 @@ final class PhotoSearchViewModel {
             .removeDuplicates()
             .compactMap { query in
                 self.loadingState = .loading
-                return self.searchPhotosUseCase.search(PhotoSearchQueryMapper.toDomain(
-                    query: query,
-                    searchPhotoFilter: self.searchPhotoFilter
-                ))
+                return self.searchPhotosUseCase.search(.init(query: "", locale: "", size: "", color: "", orientation: "")
+                )
             }
             .switchToLatest()
             .sink { [weak self] completion in
