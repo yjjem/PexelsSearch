@@ -147,24 +147,3 @@ final class PhotoSearchParameterViewModel {
         filters = filters
     }
 }
-
-protocol ReadPhotosParameterUseCase {
-    func execute() -> PhotosParameter
-}
-
-final class DefaultReadPhotosParameterUseCase: ReadPhotosParameterUseCase {
-    
-    // MARK: Property(s)
-    
-    private let repository: PhotosParameterRepository
-    
-    init(repository: PhotosParameterRepository) {
-        self.repository = repository
-    }
-    
-    // MARK: Function(s)
-    
-    func execute() -> PhotosParameter {
-        return repository.read()
-    }
-}
