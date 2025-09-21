@@ -13,7 +13,7 @@ final class AppCoordinator: Coordinator {
     
     // MARK: Type(s)
     
-    typealias RootViewController = PhotoSearchViewController
+    typealias RootViewController = UITabBarController
     
     // MARK: Property(s)
     
@@ -22,7 +22,7 @@ final class AppCoordinator: Coordinator {
     }
     
     var rootCoordinator: (any Coordinator)?
-    var rootViewController: RootViewController?
+    let rootViewController: RootViewController
     var childCoordinators: [ObjectIdentifier : any Coordinator] = [:]
     
     private let window: UIWindow
@@ -31,14 +31,16 @@ final class AppCoordinator: Coordinator {
     init(window: UIWindow, applicationDependency: ApplicationDependencyContainer) {
         self.window = window
         self.applicationDependency = applicationDependency
+        self.rootViewController = UITabBarController()
     }
     
     // MARK: Function(s)
     
     func start() {
         configureAppAppearance()
-        window.rootViewController = createTabController()
+        window.rootViewController = self.rootViewController
         window.makeKeyAndVisible()
+        configureTabController()
     }
     
     // MARK: Private Function(s)
@@ -50,19 +52,21 @@ final class AppCoordinator: Coordinator {
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
     }
     
-    private func createTabController() -> UITabBarController {
-        let searchDependency = applicationDependency.makeSearchSceneDependency()
+    private func configureTabController() {
+        let searchCoordinator = SearchCoordinator(
+            rootCoordinator: self,
+            searchSceneDependency: applicationDependency.makeSearchSceneDependency()
+        )
+        searchCoordinator.start()
+        self.addChild(searchCoordinator)
+        
         let searchTab = UITab(
             title: "Search",
             image: UIImage(systemName: "magnifyingglass"),
             identifier: "search"
         ) { tab in
-            let searchViewController = searchDependency.makePhotoSearchViewController()
-            searchViewController.navigationItem.title = "Photos"
-            let searchNavigation = UINavigationController(rootViewController: searchViewController)
-            searchNavigation.navigationBar.prefersLargeTitles = true
-            return searchNavigation
+            return searchCoordinator.rootViewController
         }
-        return UITabBarController(tabs: [searchTab])
+        self.rootViewController.setTabs([searchTab], animated: false)
     }
 }
