@@ -83,15 +83,11 @@ final class PhotoCellContentView: UIView, UIContentView {
         }
         
         self.imageView.image = nil
-        self.imageView.layer.borderColor = UIColor.systemGray.cgColor
-        self.imageView.layer.borderWidth = 0.2
-        self.imageView.layer.masksToBounds = true
         if let url = URL(string: configuration.imageURL) {
             ImageManager.shared
                 .image(for: url)
                 .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    print(completion)
+                .sink { _ in
                 } receiveValue: { image in
                     self.imageView.image = image
                 }
