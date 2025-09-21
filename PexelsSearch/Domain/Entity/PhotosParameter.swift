@@ -15,7 +15,7 @@ struct PhotosParameter {
     // MARK: Function(s)
     
     mutating func selectSize(_ size: String) throws {
-        guard size.isEmpty || self.size == size else {
+        guard !size.isEmpty || self.size != size else {
             return
         }
         let supportedSize = ["small", "medium", "large"]
@@ -26,7 +26,7 @@ struct PhotosParameter {
     }
     
     mutating func selectColor(_ color: String) throws {
-        guard color.isEmpty || self.color == color else {
+        guard !color.isEmpty || self.color != color else {
             return
         }
         let validHexCodeRegex = "/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/"
@@ -37,14 +37,14 @@ struct PhotosParameter {
         guard let hexCodeRegex = try? Regex(validHexCodeRegex) else {
             preconditionFailure("Color hex code must be valid  must be valid.")
         }
-        guard supportedColor.contains(color) && color.contains(hexCodeRegex) else {
+        guard supportedColor.contains(color) || color.contains(hexCodeRegex) else {
             throw PhotosParameterSelectError.notSupportedColor(color)
         }
         self.color = color
     }
     
     mutating func selectOrientation(_ orientation: String) throws {
-        guard orientation.isEmpty || self.orientation == orientation else {
+        guard !orientation.isEmpty || self.orientation != orientation else {
             return
         }
         let supportedOrientations = ["portrait", "landscape", "square"]
@@ -55,7 +55,7 @@ struct PhotosParameter {
     }
     
     mutating func selectLocale(_ locale: String) throws {
-        guard locale.isEmpty || self.locale == locale else {
+        guard !locale.isEmpty || self.locale != locale else {
             return
         }
         let supportedLocales = ["us"]
