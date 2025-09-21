@@ -20,6 +20,7 @@ final class PhotoSearchViewController: UIViewController {
     
     private var cancelBag: Set<AnyCancellable> = []
     private var viewModel: PhotoSearchViewModel?
+    private var coordinator: SearchCoordinator?
     private var searchStateConfiguration: UIContentUnavailableConfiguration? {
         didSet {
             self.contentUnavailableConfiguration = searchStateConfiguration
@@ -31,9 +32,13 @@ final class PhotoSearchViewController: UIViewController {
     private let loadingIndicator = UIActivityIndicatorView()
     private let collectionView = UICollectionView(frame: .zero, collectionViewLayout: .init())
     
-    static func create(searchViewModel: PhotoSearchViewModel) -> PhotoSearchViewController {
+    static func create(
+        searchViewModel: PhotoSearchViewModel,
+        coordinator: SearchCoordinator
+    ) -> PhotoSearchViewController {
         let searchViewController = PhotoSearchViewController()
         searchViewController.viewModel = searchViewModel
+        searchViewController.coordinator = coordinator
         return searchViewController
     }
     
@@ -81,6 +86,13 @@ final class PhotoSearchViewController: UIViewController {
     
     private func configureNavigationItem() {
         navigationItem.searchController = searchController
+        searchController.searchBar.showsBookmarkButton = true
+        searchController.searchBar.setImage(
+            UIImage(systemName: "line.3.horizontal.decrease.circle")?.withTintColor(.blue),
+            for: .bookmark,
+            state: .normal
+        )
+        searchController.searchBar.delegate = self
     }
     
     private func configureCollectionView() {
@@ -179,5 +191,13 @@ final class PhotoSearchViewController: UIViewController {
         snapShot.deleteAllItems()
         snapShot.appendSections([Section.main])
         dataSource.apply(snapShot)
+    }
+}
+
+// MARK: UISearchBarDelegate
+
+extension PhotoSearchViewController: UISearchBarDelegate {
+    func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
+        coordinator?.presentSelectParameter(true)
     }
 }

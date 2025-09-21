@@ -43,11 +43,34 @@ final class SearchSceneDependencyContainer {
         )
     }
     
-    func makePhotoSearchViewController() -> PhotoSearchViewController {
+    func makePhotoSearchViewController(
+        coordinator: SearchCoordinator
+    ) -> PhotoSearchViewController {
         return PhotoSearchViewController.create(
             searchViewModel: PhotoSearchViewModel(
                 searchPhotosUseCase: makeSearchPhotosUseCase()
-            )
+            ),
+            coordinator: coordinator
+        )
+    }
+    
+    func makeSelectPhotosParameterUseCase() -> SelectPhotosParameterUseCase {
+        return DefaultSelectPhotosParameterUseCase(repository: photosParameterRepository)
+    }
+    
+    func makeReadPhotosParameterUseCase() -> ReadPhotosParameterUseCase {
+        return DefaultReadPhotosParameterUseCase(repository: photosParameterRepository)
+    }
+    
+    func makePhotoSearchParameterViewController(
+        coordinator: SearchCoordinator
+    ) -> PhotoSearchParametersViewController {
+        return PhotoSearchParametersViewController.create(
+            viewModel: PhotoSearchParameterViewModel(
+                selectUseCase: makeSelectPhotosParameterUseCase(),
+                readUseCase: makeReadPhotosParameterUseCase()
+            ),
+            coordinator: coordinator
         )
     }
 }

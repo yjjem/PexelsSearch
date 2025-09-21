@@ -8,22 +8,27 @@
 
 import UIKit
 
-protocol Coordinator<RootViewController> {
+protocol Coordinator<RootViewController>: AnyObject {
     associatedtype RootViewController: UIViewController
     var id: ObjectIdentifier { get }
     var rootCoordinator: (any Coordinator)? { get }
-    var rootViewController: RootViewController? { get }
+    var rootViewController: RootViewController { get }
     var childCoordinators: [ObjectIdentifier: any Coordinator] { get set }
     func start()
     func onChildFinish(_ coordinator: any Coordinator)
 }
 
 extension Coordinator {
-    mutating func addChild(_ coordinator: any Coordinator) {
+    
+    var id: ObjectIdentifier {
+        return ObjectIdentifier(self)
+    }
+    
+    func addChild(_ coordinator: any Coordinator) {
         childCoordinators[coordinator.id] = coordinator
     }
     
-    mutating func removeChild(_ coordinator: any Coordinator) {
+    func removeChild(_ coordinator: any Coordinator) {
         childCoordinators.removeValue(forKey: coordinator.id)
     }
     
