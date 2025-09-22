@@ -9,5 +9,7 @@ import Combine
 
 protocol PhotoRepository {
     func fetchPhoto(by id: Int) -> AnyPublisher<Photo, FetchPhotoError>
-    func searchPhotos(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError>
+    func fetchPhotos(
+        matching query: SearchPhotosQuery
+    ) -> AnyPublisher<[Photo], SearchPhotosError>
 }

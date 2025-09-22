@@ -38,6 +38,6 @@ final class DefaultSearchPhotosUseCase: SearchPhotosUseCase {
             color: currentSearchPhotosParameter.color,
             orientation: currentSearchPhotosParameter.orientation
         )
-        return photoRepository.searchPhotos(query)
+        return photoRepository.fetchPhotos(matching: query)
     }
 }

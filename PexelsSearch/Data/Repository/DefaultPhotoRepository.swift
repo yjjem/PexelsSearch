@@ -28,7 +28,9 @@ final class DefaultPhotoRepository: PhotoRepository {
         return Empty().eraseToAnyPublisher()
     }
     
-    func searchPhotos(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError> {
+    func fetchPhotos(
+        matching query: SearchPhotosQuery
+    ) -> AnyPublisher<[Photo], SearchPhotosError> {
         return photoPersistence
             .fetchPhotos(SearchPhotosRequest(from: query, page: page, perPage: perPage))
             .handleEvents(receiveOutput: incrementPage)
