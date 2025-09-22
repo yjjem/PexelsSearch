@@ -28,6 +28,19 @@ enum PexelsAPI {
     
     // MARK: Function(s)
     
+    static func fetchPhotoRequest(id: Int) -> HTTPRequest {
+        return HTTPRequest(
+            method: .get,
+            message: authorizedHTTPMessage,
+            endpoint: EndPoint(
+                scheme: "https",
+                host: "api.pexels.com",
+                path: "/v1/photos/\(id)",
+                query: .init()
+            )
+        )
+    }
+    
     static func searchPhotosRequest(
         query: String,
         orientation: String,

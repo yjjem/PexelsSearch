@@ -10,6 +10,7 @@ import Combine
 import Foundation
 
 protocol RemotePhotoPersistence {
+    func fetchPhoto(by id: Int) -> AnyPublisher<PhotoResponse, RemotePhotoError>
     func fetchPhotos(
         _ request: SearchPhotosRequest
     ) -> AnyPublisher<SearchPhotosResponse, RemotePhotoError>
@@ -17,7 +18,7 @@ protocol RemotePhotoPersistence {
 
 final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
     
-    // MARK: Variable(s)
+    // MARK: Property(s)
     
     private let httpClient: HTTPClient
     private let decoder: JSONDecoder
@@ -30,6 +31,34 @@ final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
     }
     
     // MARK: Function(s)
+    
+    func fetchPhoto(by id: Int) -> AnyPublisher<PhotoResponse, RemotePhotoError> {
+        return httpClient.loadPublisher(httpRequest: PexelsAPI.fetchPhotoRequest(id: id))
+            .decode(type: PhotoResponse.self, decoder: decoder)
+            .mapError { error in
+                switch error.self {
+                case is DecodingError:
+                    return .decodingFailed("")
+                case let httpClientError as HTTPClientError:
+                    switch httpClientError {
+                    case .badHTTPResponse(let httpResponse):
+                        return .serverError(statusCode: httpResponse.statusCode)
+                    case .notHttpResponse(_), .requestConversionFailure(_), .unexpected(_):
+                        return .unexpected(message: "")
+                    case .urlError(let urlError):
+                        switch urlError.code {
+                        case .networkConnectionLost, .notConnectedToInternet:
+                            return .networkUnavailable
+                        default:
+                            return .unexpected(message: "")
+                        }
+                    }
+                default:
+                    return .unexpected(message: "")
+                }
+            }
+            .eraseToAnyPublisher()
+    }
     
     func fetchPhotos(
         _ request: SearchPhotosRequest
@@ -47,24 +76,24 @@ final class DefaultRemotePhotoPersistence: RemotePhotoPersistence {
             .decode(type: SearchPhotosResponse.self, decoder: decoder)
             .mapError { error in
                 switch error.self {
-                    case is DecodingError:
-                        return .decodingFailed("")
-                    case let httpClientError as HTTPClientError:
-                        switch httpClientError {
-                        case .badHTTPResponse(let httpResponse):
-                            return .serverError(statusCode: httpResponse.statusCode)
-                        case .notHttpResponse(_), .requestConversionFailure(_), .unexpected(_):
+                case is DecodingError:
+                    return .decodingFailed("")
+                case let httpClientError as HTTPClientError:
+                    switch httpClientError {
+                    case .badHTTPResponse(let httpResponse):
+                        return .serverError(statusCode: httpResponse.statusCode)
+                    case .notHttpResponse(_), .requestConversionFailure(_), .unexpected(_):
+                        return .unexpected(message: "")
+                    case .urlError(let urlError):
+                        switch urlError.code {
+                        case .networkConnectionLost, .notConnectedToInternet:
+                            return .networkUnavailable
+                        default:
                             return .unexpected(message: "")
-                        case .urlError(let urlError):
-                            switch urlError.code {
-                            case .networkConnectionLost, .notConnectedToInternet:
-                                return .networkUnavailable
-                            default:
-                                return .unexpected(message: "")
                         }
                     }
-                    default:
-                        return .unexpected(message: "")
+                default:
+                    return .unexpected(message: "")
                 }
             }
             .eraseToAnyPublisher()
