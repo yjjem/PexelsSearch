@@ -24,6 +24,10 @@ final class DefaultPhotoRepository: PhotoRepository {
     
     // MARK: Function(s)
     
+    func fetchPhoto(by id: Int) -> AnyPublisher<Photo, FetchPhotoError> {
+        return Empty().eraseToAnyPublisher()
+    }
+    
     func searchPhotos(_ query: SearchPhotosQuery) -> AnyPublisher<[Photo], SearchPhotosError> {
         return photoPersistence
             .fetchPhotos(SearchPhotosRequest(from: query, page: page, perPage: perPage))
