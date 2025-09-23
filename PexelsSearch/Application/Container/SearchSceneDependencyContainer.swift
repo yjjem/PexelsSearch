@@ -20,28 +20,47 @@ final class SearchSceneDependencyContainer {
         return InMemoryPhotosParameterRepository()
     }()
     
+    private lazy var photoRepository: PhotoRepository = {
+        return DefaultPhotoRepository(
+            photoPersistence: makeRemotePhotoPersistence(),
+            perPage: 50
+        )
+    }()
+    
     private let dependency: Dependency
     
     init(dependency: Dependency) {
         self.dependency = dependency
     }
     
-    // MARK: Function(s)
+    // MARK: Data
     
     func makeRemotePhotoPersistence() -> DefaultRemotePhotoPersistence {
         return DefaultRemotePhotoPersistence(httpClient: dependency.httpClient)
     }
     
-    func makePhotoRepository() -> PhotoRepository {
-        return DefaultPhotoRepository(photoPersistence: makeRemotePhotoPersistence(), perPage: 50)
-    }
+    // MARK: UseCase
     
     func makeSearchPhotosUseCase() -> SearchPhotosUseCase {
         return DefaultSearchPhotosUseCase(
-            photoRepository: makePhotoRepository(),
+            photoRepository: photoRepository,
             photosParameterRepository: photosParameterRepository
         )
     }
+    
+    func makeSelectPhotosParameterUseCase() -> SelectPhotosParameterUseCase {
+        return DefaultSelectPhotosParameterUseCase(repository: photosParameterRepository)
+    }
+    
+    func makeReadPhotosParameterUseCase() -> ReadPhotosParameterUseCase {
+        return DefaultReadPhotosParameterUseCase(repository: photosParameterRepository)
+    }
+    
+    func makeFetchPhotoUseCase() -> FetchPhotoUseCase {
+        return DefaultFetchPhotoUseCase(repository: photoRepository)
+    }
+    
+    // MARK: ViewController
     
     func makePhotoSearchViewController(
         coordinator: SearchCoordinator
@@ -52,14 +71,6 @@ final class SearchSceneDependencyContainer {
             ),
             coordinator: coordinator
         )
-    }
-    
-    func makeSelectPhotosParameterUseCase() -> SelectPhotosParameterUseCase {
-        return DefaultSelectPhotosParameterUseCase(repository: photosParameterRepository)
-    }
-    
-    func makeReadPhotosParameterUseCase() -> ReadPhotosParameterUseCase {
-        return DefaultReadPhotosParameterUseCase(repository: photosParameterRepository)
     }
     
     func makePhotoSearchParameterViewController(
