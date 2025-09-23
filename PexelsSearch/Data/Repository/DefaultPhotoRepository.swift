@@ -25,7 +25,37 @@ final class DefaultPhotoRepository: PhotoRepository {
     // MARK: Function(s)
     
     func fetchPhoto(by id: Int) -> AnyPublisher<Photo, FetchPhotoError> {
-        return Empty().eraseToAnyPublisher()
+        return photoPersistence.fetchPhoto(by: id)
+            .mapError { error in
+                print(error)
+                return .unexpected
+            }
+            .map { response in
+                Photo(
+                    id: response.id,
+                    width: response.width,
+                    height: response.height,
+                    url: response.url,
+                    title: response.alt,
+                    averageColor: response.avgColor,
+                    photographer: Photographer(
+                        id: response.photographerId,
+                        name: response.photographer,
+                        profile: response.photographerUrl
+                    ),
+                    source: PhotoSource(
+                        original: response.src.original,
+                        large2x: response.src.large2x,
+                        large: response.src.large,
+                        medium: response.src.medium,
+                        small: response.src.small,
+                        portrait: response.src.portrait,
+                        landscape: response.src.landscape,
+                        tiny: response.src.tiny
+                    )
+                )
+            }
+            .eraseToAnyPublisher()
     }
     
     func fetchPhotos(
