@@ -92,10 +92,15 @@ final class PhotoSearchViewController: UIViewController {
             for: .bookmark,
             state: .normal
         )
+        searchController.searchBar.scopeButtonTitles = ["Photo"]
+        searchController.searchBar.selectedScopeButtonIndex = .zero
+        searchController.searchBar.showsScopeBar = true
+        navigationItem.preferredSearchBarPlacement = .stacked
         searchController.searchBar.delegate = self
     }
     
     private func configureCollectionView() {
+        collectionView.delegate = self
         collectionView.dataSource = createDataSource()
         collectionView.keyboardDismissMode = .onDrag
         collectionView.setCollectionViewLayout(
@@ -199,5 +204,19 @@ final class PhotoSearchViewController: UIViewController {
 extension PhotoSearchViewController: UISearchBarDelegate {
     func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
         coordinator?.presentSelectParameter(true)
+    }
+}
+
+// MARK: UICollectionViewDelegate
+
+extension PhotoSearchViewController: UICollectionViewDelegate {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        guard let photoDetailViewModel = dataSource.itemIdentifier(for: indexPath) else {
+            return
+        }
+        coordinator?.pushPhotoDetail(photoDetailViewModel.identifier)
     }
 }
