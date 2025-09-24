@@ -50,4 +50,11 @@ final class SearchCoordinator: Coordinator {
     func onSelectParameterFinish() {
         rootViewController.dismiss(animated: true)
     }
+    
+    func pushPhotoDetail(_ photoIdentifier: Int) {
+        let photoDetailView = searchSceneDependency.makePhotoDetailViewController(
+            photoIdentifier
+        )
+        rootViewController.pushViewController(photoDetailView, animated: true)
+    }
 }
