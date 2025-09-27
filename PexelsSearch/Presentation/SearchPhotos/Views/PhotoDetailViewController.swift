@@ -10,7 +10,10 @@ import UIKit
 import Combine
 
 final class PhotoDetailViewController: UIViewController {
-    private enum Constants {
+    
+    // MARK: Metric(s)
+    
+    private enum Metrics {
         static let scrollViewHorizontalPadding: CGFloat = 16
         static let scrollViewVerticalPadding: CGFloat = 10
         static let imageMinimumHeightConstant: CGFloat = 100
@@ -21,13 +24,13 @@ final class PhotoDetailViewController: UIViewController {
     
     private var viewModel: PhotoDetailViewModel?
     private var cancelBag = Set<AnyCancellable>()
+    private var saveButton: UIBarButtonItem?
+    private var likeButton: UIBarButtonItem?
     
     private let scrollContentView = UIStackView()
     private let scrollView = UIScrollView()
-    private let imageView = UIImageView()
+    private let imageView = LoadableImageView()
     private let imageButtonStack = UIStackView()
-    private let saveButton = UIButton()
-    private let likeButton = UIButton()
     private let imageInformationStack = UIStackView()
     private let imagePhotographerLabel = PaddableLabel()
     private let imageDescriptionLabel = PaddableLabel()
@@ -43,112 +46,151 @@ final class PhotoDetailViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        buildLayout()
+        configureLayoutConstraints()
         configureLayoutStyle()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        fillContent()
+        configureNavigationItems()
+        bindViewModel()
+        viewModel?.onViewDidLoad()
     }
     
     // MARK: Private Function(s)
     
-    private func buildLayout() {
+    private func bindViewModel() {
+        viewModel?.$photoDetailState
+            .receive(on: DispatchQueue.main)
+            .sink {  photoDetailState in
+                self.imagePhotographerLabel.text = photoDetailState?.providerName
+                self.imageDescriptionLabel.text = photoDetailState?.description
+                self.imageSizeLabel.text = photoDetailState?.sizeDisplayText
+                
+                if let photoDetailURL = photoDetailState?.photoURL,
+                   let url = URL(string: photoDetailURL) {
+                    ImageManager.shared.image(for: url)
+                        .handleEvents(receiveSubscription: { _ in
+                            self.imageView.startAnimating()
+                        })
+                        .receive(on: DispatchQueue.main)
+                        .sink { completion in
+                            self.imageView.stopAnimating()
+                        } receiveValue: { image in
+                            self.imageView.image = image
+                        }
+                        .store(in: &self.cancelBag)
+                }
+            }
+            .store(in: &cancelBag)
+        
+        viewModel?
+            .$isLiked
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLiked in
+                let likedButtonSymbolName = isLiked ? "heart.fill" : "heart"
+                guard let symbol = UIImage(systemName: likedButtonSymbolName) else {
+                    return
+                }
+                self?.likeButton?.setSymbolImage(symbol, contentTransition: .replace)
+            }
+            .store(in: &cancelBag)
+    }
+    
+    // MARK: TODO: Refactor
+    
+    private func configureLayoutConstraints() {
         view.addSubview(scrollView)
-        scrollView.addSubview(scrollContentView)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.layoutToSafeArea(of: view)
-        scrollContentView.axis = .vertical
-        scrollContentView.addArrangedSubview(imageView)
-        scrollContentView.addArrangedSubview(imageInformationStack)
-        scrollContentView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentInset = UIEdgeInsets(
-            top: Constants.scrollViewVerticalPadding,
-            left: Constants.scrollViewHorizontalPadding,
-            bottom: Constants.scrollViewVerticalPadding,
-            right: Constants.scrollViewHorizontalPadding
-        )
-        NSLayoutConstraint.activate([
-            scrollContentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            scrollContentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            scrollContentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            scrollContentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            scrollContentView.widthAnchor.constraint(
-                equalTo: scrollView.frameLayoutGuide.widthAnchor,
-                constant: -(Constants.scrollViewHorizontalPadding * 2)
-            ),
-        ])
+
+        scrollView
+            .withChild(scrollContentView)
+            .withActivatingConstraintsSet([
+                scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+                scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
         
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.backgroundColor = .systemGreen
-        imageView.contentMode = .scaleToFill
-        imageView.addSubview(imageSizeLabel)
-        imageSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            imageView.widthAnchor.constraint(
-                equalTo: scrollContentView.widthAnchor
-            ),
-            imageView.heightAnchor.constraint(
-                greaterThanOrEqualToConstant: Constants.imageMinimumHeightConstant
-            ),
-            imageView.topAnchor.constraint(
-                equalTo: scrollContentView.topAnchor
-            ),
-            imageView.leadingAnchor.constraint(
-                equalTo: scrollContentView.leadingAnchor
-            ),
-            imageView.trailingAnchor.constraint(
-                equalTo: scrollContentView.trailingAnchor
-            ),
-            
-            imageSizeLabel.bottomAnchor.constraint(
-                equalTo: imageView.bottomAnchor, constant: -5
-            ),
-            imageSizeLabel.trailingAnchor.constraint(
-                equalTo: imageView.trailingAnchor, constant: -5
-            )
-        ])
+        scrollContentView
+            .withChild(imageView)
+            .withChild(imageInformationStack)
+            .withActivatingConstraintsSet([
+                scrollContentView.topAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.topAnchor),
+                scrollContentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+                scrollContentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+                scrollContentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+                scrollContentView.widthAnchor.constraint(
+                    equalTo: scrollView.frameLayoutGuide.widthAnchor
+                ),
+            ])
         
-        imageInformationStack.addArrangedSubview(imageDescriptionLabel)
-        imageInformationStack.addArrangedSubview(imagePhotographerLabel)
-        NSLayoutConstraint.activate([
-            imageInformationStack.topAnchor.constraint(equalTo: imageView.bottomAnchor),
-            imageInformationStack.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
-            imageInformationStack.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
-            imageInformationStack.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor)
-        ])
+        let imageRatio = (imageView.image?.size.height / imageView.image?.size.width)
+        imageView
+            .withActivatingConstraintsSet([
+                imageView.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor),
+                imageView.bottomAnchor.constraint(equalTo: imageInformationStack.topAnchor),
+                imageView.topAnchor.constraint(equalTo: scrollContentView.topAnchor),
+                imageView.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
+                imageView.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
+                imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier:)
+            ])
+        
+        imageInformationStack
+            .withChild(imagePhotographerLabel)
+            .withChild(imageDescriptionLabel)
+            .withActivatingConstraintsSet([
+                imageInformationStack.topAnchor.constraint(equalTo: imageView.bottomAnchor),
+                imageInformationStack.leadingAnchor.constraint(equalTo: scrollContentView.safeAreaLayoutGuide.leadingAnchor),
+                imageInformationStack.trailingAnchor.constraint(equalTo: scrollContentView.safeAreaLayoutGuide.trailingAnchor),
+                imageInformationStack.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor)
+            ])
     }
     
     private func configureLayoutStyle() {
         view.backgroundColor = .systemBackground
-        navigationItem.largeTitleDisplayMode = .never
+        scrollContentView.axis = .vertical
+        scrollContentView.backgroundColor = .secondarySystemBackground
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .secondarySystemBackground
+        imageInformationStack.backgroundColor = .systemBackground
         imageSizeLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
-        imageDescriptionLabel.font = UIFont.preferredFont(forTextStyle: .title1)
-        imageDescriptionLabel.numberOfLines = Constants.imageDescriptionLineNumbers
-        imagePhotographerLabel.font = UIFont.preferredFont(forTextStyle: .title3)
+        
+        if let titleDescriptor = UIFontDescriptor
+            .preferredFontDescriptor(withTextStyle: .title2)
+            .withSymbolicTraits(.traitBold) {
+            
+            imagePhotographerLabel.font = UIFont(
+                descriptor: titleDescriptor,
+                size: titleDescriptor.pointSize
+            )
+        }
+        imageDescriptionLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        imageDescriptionLabel.numberOfLines = Metrics.imageDescriptionLineNumbers
         imageInformationStack.axis = .vertical
         imageInformationStack.spacing = 2
-        navigationItem.rightBarButtonItems = [
-            UIBarButtonItem(image: UIImage(systemName: "heart")),
-            UIBarButtonItem(image: UIImage(systemName: "bookmark"))
-        ]
     }
     
-    private func fillContent() {
-        imagePhotographerLabel.text = viewModel?.photographerName
-        imageDescriptionLabel.text = viewModel?.photoDescription
-        imageSizeLabel.text = viewModel?.photoSizeDisplayText
-        
-        if let photoURL = viewModel?.photoURL, let url = URL(string: photoURL) {
-            ImageManager.shared.image(for: url)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    print(completion)
-                } receiveValue: { image in
-                    self.imageView.image = image
-                }
-                .store(in: &cancelBag)
+    private func configureNavigationItems() {
+        let likeButton = UIBarButtonItem(
+            image: UIImage(systemName: "heart"),
+            primaryAction: onTapLikeAction()
+        )
+        let saveButton = UIBarButtonItem(
+            image: UIImage(systemName: "bookmark"),
+            primaryAction: onTapSaveAction()
+        )
+        navigationItem.rightBarButtonItems = [likeButton, saveButton]
+        navigationItem.largeTitleDisplayMode = .never
+        self.likeButton = likeButton
+        self.saveButton = saveButton
+    }
+    
+    private func onTapLikeAction() -> UIAction {
+        return UIAction { [weak viewModel] _ in
+            viewModel?.onTapLike()
+        }
+    }
+    
+    private func onTapSaveAction() -> UIAction {
+        return UIAction { [weak viewModel] _ in
+            viewModel?.onTapSave()
         }
     }
 }

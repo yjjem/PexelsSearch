@@ -7,9 +7,17 @@
 
 
 struct PhotoDetailState {
+    
+    var isLiked: Bool = false
+    var isSaved: Bool = false
+    var sizeDisplayText: String {
+        return "\(width) x \(height)"
+    }
+    
     let photoURL: String
     let photoIdentifier: Int
     let providerName: String
     let description: String
-    let sizeDisplayText: String
+    let width: Int
+    let height: Int
 }

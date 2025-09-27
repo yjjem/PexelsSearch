@@ -12,7 +12,10 @@ final class PhotoDetailViewModel {
     
     // MARK: Property(s)
     
+    @Published var isLiked: Bool?
+    @Published var isSaved: Bool?
     @Published var photoDetailState: PhotoDetailState?
+    
     private var cancelBag = Set<AnyCancellable>()
     private let fetchPhotoUseCase: FetchPhotoUseCase
     private let photoIdentifier: Int
@@ -34,10 +37,21 @@ final class PhotoDetailViewModel {
                         photoIdentifier: photo.id,
                         providerName: photo.photographer.name,
                         description: photo.title,
-                        sizeDisplayText: "\(photo.width) x \(photo.height)"
+                        width: photo.width,
+                        height: photo.height
                     )
                 }
             )
             .store(in: &cancelBag)
+    }
+    
+    func onTapLike() {
+        self.photoDetailState?.isLiked.toggle()
+        self.isLiked = self.photoDetailState?.isLiked
+    }
+    
+    func onTapSave() {
+        self.photoDetailState?.isSaved.toggle()
+        self.isSaved = self.photoDetailState?.isSaved
     }
 }
