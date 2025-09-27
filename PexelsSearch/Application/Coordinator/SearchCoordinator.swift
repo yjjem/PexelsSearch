@@ -51,10 +51,14 @@ final class SearchCoordinator: Coordinator {
         rootViewController.dismiss(animated: true)
     }
     
-    func pushPhotoDetail(_ photoIdentifier: Int) {
+    func pushPhotoDetail(_ photoIdentifier: Int, transition: UIViewController.Transition?) {
         let photoDetailView = searchSceneDependency.makePhotoDetailViewController(
             photoIdentifier
         )
+//        photoDetailView.modalPresentationStyle = .fullScreen
+        photoDetailView.preferredTransition = transition
+        photoDetailView.hidesBottomBarWhenPushed = true
+//        rootViewController.present(photoDetailView, animated: true)
         rootViewController.pushViewController(photoDetailView, animated: true)
     }
 }

@@ -217,6 +217,11 @@ extension PhotoSearchViewController: UICollectionViewDelegate {
         guard let photoDetailViewModel = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
-        coordinator?.pushPhotoDetail(photoDetailViewModel.identifier)
+        coordinator?.pushPhotoDetail(
+            photoDetailViewModel.identifier,
+            transition: .zoom { _ in
+                collectionView.cellForItem(at: indexPath)
+            }
+        )
     }
 }
