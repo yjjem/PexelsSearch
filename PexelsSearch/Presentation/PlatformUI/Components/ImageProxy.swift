@@ -22,11 +22,25 @@ struct ImageProxy {
     
     // MARK: Property(s)
     
-    private let strategy: ImageLoadingStrategy
-    private let imageURL: String
+    let imageSize: CGSize?
     
-    init(imageURL: String, strategy: ImageLoadingStrategy = DefaultImageLoadStrategy()) {
+    var imageRatio: CGFloat? {
+        guard let imageSize else {
+            return nil
+        }
+        return imageSize.height / imageSize.width
+    }
+    
+    private let imageURL: String
+    private let strategy: ImageLoadingStrategy
+    
+    init(
+        imageURL: String,
+        imageSize: CGSize? = nil,
+        strategy: ImageLoadingStrategy = DefaultImageLoadStrategy()
+    ) {
         self.imageURL = imageURL
+        self.imageSize = imageSize
         self.strategy = strategy
     }
     // MARK: Function(s)
