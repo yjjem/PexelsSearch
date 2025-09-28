@@ -13,12 +13,13 @@ struct ReplacingPoorImageStrategy: ImageLoadingStrategy {
     
     // MARK: Property(s)
     
-    private let initialImage: UIImage
+    let initialImage: UIImage?
     
     // MARK: Function(s)
     
     func execute(url: String) -> AnyPublisher<UIImage, Error> {
         let poorImagePublisher = Just(initialImage)
+            .compactMap { $0 }
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
         let highQualityImagePublisher = ImageManager.shared
