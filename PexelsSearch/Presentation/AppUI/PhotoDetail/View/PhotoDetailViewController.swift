@@ -65,16 +65,16 @@ final class PhotoDetailViewController: UIViewController {
                 
                 if let photoDetailURL = photoDetailState?.photoURL {
                     ImageManager.shared.image(for: photoDetailURL)
-                        .handleEvents(receiveSubscription: { _ in
-                            self.imageView.startAnimating()
-                        })
-                        .receive(on: DispatchQueue.main)
-                        .sink { completion in
-                            self.imageView.stopAnimating()
-                        } receiveValue: { image in
-                            self.imageView.image = image
-                        }
-                        .store(in: &self.cancelBag)
+                       .handleEvents(receiveSubscription: { _ in
+                           self.imageView.startAnimating()
+                       })
+                       .receive(on: DispatchQueue.main)
+                       .sink { completion in
+                           self.imageView.stopAnimating()
+                       } receiveValue: { image in
+                           self.imageView.image = image
+                       }
+                       .store(in: &self.cancelBag)
                 }
             }
             .store(in: &cancelBag)
@@ -111,16 +111,14 @@ final class PhotoDetailViewController: UIViewController {
             .withChild(imageView)
             .withChild(imageInformationStack)
             .withActivatingConstraintsSet([
-                scrollContentView.topAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.topAnchor),
+                scrollContentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
                 scrollContentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
                 scrollContentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
                 scrollContentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-                scrollContentView.widthAnchor.constraint(
-                    equalTo: scrollView.frameLayoutGuide.widthAnchor
-                ),
+                scrollContentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
             ])
         
-        let imageRatio = (imageView.image?.size.height / imageView.image?.size.width)
+//        let imageRatio = (imageView.image?.size.height / imageView.image?.size.width)
         imageView
             .withActivatingConstraintsSet([
                 imageView.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor),
@@ -128,7 +126,7 @@ final class PhotoDetailViewController: UIViewController {
                 imageView.topAnchor.constraint(equalTo: scrollContentView.topAnchor),
                 imageView.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
-                imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier:)
+//                imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier:)
             ])
         
         imageInformationStack
@@ -163,7 +161,6 @@ final class PhotoDetailViewController: UIViewController {
         imageDescriptionLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         imageDescriptionLabel.numberOfLines = Metrics.imageDescriptionLineNumbers
         imageInformationStack.axis = .vertical
-        imageInformationStack.spacing = 2
     }
     
     private func configureNavigationItems() {
