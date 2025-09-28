@@ -22,6 +22,9 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     // MARK: Property(s)
     
     var hidesZoomScaleOnMinimumValue: Bool = false
+    var currentImage: UIImage? {
+        return imageView.image
+    }
     
     private lazy var imageViewLoadingDecorator = LoadingDecorator(baseView: imageView)
     private lazy var currentImageViewHeightConstraint = imageView.heightAnchor.constraint(
@@ -38,6 +41,7 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
         super.init(frame: frame)
         delegate = self
         configureLayoutConstraints()
+        configureViewDetail()
         updateZoomScale(zoomScale)
     }
     
@@ -84,12 +88,7 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     
     private func configureLayoutConstraints() {
         self.withChild(imageView)
-        imageView.contentMode = .scaleAspectFit
-        showsHorizontalScrollIndicator = false
-        showsVerticalScrollIndicator = false
-        bounces = false
-        minimumZoomScale = Metrics.minimumZoomScale
-        maximumZoomScale = Metrics.maximumZoomScale
+            .withChild(zoomScaleView)
         imageView
             .withActivatingConstraintsSet([
                 imageView.topAnchor.constraint(equalTo: topAnchor),
@@ -99,8 +98,6 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
                 imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
                 imageView.centerYAnchor.constraint(equalTo: centerYAnchor)
             ])
-        
-        self.withChild(zoomScaleView)
         zoomScaleView
             .withActivatingConstraintsSet([
                 zoomScaleView.bottomAnchor.constraint(equalTo: frameLayoutGuide.bottomAnchor),
@@ -108,12 +105,20 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
             ])
     }
     
+    private func configureViewDetail() {
+        imageView.contentMode = .scaleAspectFit
+        minimumZoomScale = Metrics.minimumZoomScale
+        maximumZoomScale = Metrics.maximumZoomScale
+        showsHorizontalScrollIndicator = false
+        showsVerticalScrollIndicator = false
+        bounces = false
+    }
+    
     private func updateZoomScale(_ zoomScale: CGFloat) {
         zoomScaleView.text = String(format: Metrics.zoomScaleFormat, zoomScale)
     }
     
     private func updateHeightMultiplier(_ heightMultiplier: CGFloat) {
-        print(heightMultiplier)
         currentImageViewHeightConstraint.isActive = false
         let newHeightConstraint = imageView.heightAnchor.constraint(
             equalTo: imageView.widthAnchor,
