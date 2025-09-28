@@ -29,7 +29,7 @@ final class PhotoDetailViewController: UIViewController {
     
     private let scrollContentView = UIStackView()
     private let scrollView = UIScrollView()
-    private let imageView = LoadableImageView()
+    private let imageView = AdvancedImageView()
     private let imageButtonStack = UIStackView()
     private let imageInformationStack = UIStackView()
     private let imagePhotographerLabel = PaddableLabel()
@@ -62,19 +62,12 @@ final class PhotoDetailViewController: UIViewController {
                 self.imagePhotographerLabel.text = photoDetailState?.providerName
                 self.imageDescriptionLabel.text = photoDetailState?.description
                 self.imageSizeLabel.text = photoDetailState?.sizeDisplayText
-                
-                if let photoDetailURL = photoDetailState?.photoURL {
-                    ImageManager.shared.image(for: photoDetailURL)
-                       .handleEvents(receiveSubscription: { _ in
-                           self.imageView.startAnimating()
-                       })
-                       .receive(on: DispatchQueue.main)
-                       .sink { completion in
-                           self.imageView.stopAnimating()
-                       } receiveValue: { image in
-                           self.imageView.image = image
-                       }
-                       .store(in: &self.cancelBag)
+                if let photoDetailState  {
+                    let imageProxy = ImageProxy(
+                        imageURL: photoDetailState.photoURL,
+                        imageSize: CGSize(width: photoDetailState.width, height: photoDetailState.height)
+                    )
+                    self.imageView.prepareImage(imageProxy)
                 }
             }
             .store(in: &cancelBag)
