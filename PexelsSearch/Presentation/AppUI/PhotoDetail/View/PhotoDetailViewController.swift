@@ -63,9 +63,8 @@ final class PhotoDetailViewController: UIViewController {
                 self.imageDescriptionLabel.text = photoDetailState?.description
                 self.imageSizeLabel.text = photoDetailState?.sizeDisplayText
                 
-                if let photoDetailURL = photoDetailState?.photoURL,
-                   let url = URL(string: photoDetailURL) {
-                    ImageManager.shared.image(for: url)
+                if let photoDetailURL = photoDetailState?.photoURL {
+                    ImageManager.shared.image(for: photoDetailURL)
                         .handleEvents(receiveSubscription: { _ in
                             self.imageView.startAnimating()
                         })

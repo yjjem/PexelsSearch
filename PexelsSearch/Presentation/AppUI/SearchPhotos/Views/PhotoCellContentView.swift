@@ -83,16 +83,14 @@ final class PhotoCellContentView: UIView, UIContentView {
         }
         
         self.imageView.image = nil
-        if let url = URL(string: configuration.imageURL) {
-            ImageManager.shared
-                .image(for: url)
-                .receive(on: DispatchQueue.main)
-                .sink { _ in
-                } receiveValue: { image in
-                    self.imageView.image = image
-                }
-                .store(in: &cancelBag)
-        }
+        ImageManager.shared
+            .image(for: configuration.imageURL)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+            } receiveValue: { image in
+                self.imageView.image = image
+            }
+            .store(in: &cancelBag)
         self.currentConfiguration = configuration
     }
 }

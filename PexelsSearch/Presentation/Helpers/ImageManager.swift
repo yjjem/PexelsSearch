@@ -18,8 +18,12 @@ final class ImageManager {
     
     private init() { }
     
-    func image(for url: URL) -> AnyPublisher<UIImage, Error> {
+    func image(for urlString: String) -> AnyPublisher<UIImage, Error> {
+        guard let url = URL(string: urlString) else {
+            return Fail(error: ImageError()).eraseToAnyPublisher()
+        }
         let cacheKey = NSString(string: url.absoluteString)
+        
         if let cachedImage = imageCache.object(forKey: cacheKey) {
             return Just(cachedImage)
                 .setFailureType(to: Error.self)
