@@ -22,9 +22,8 @@ final class LoadingDecorator {
             loadingIndicator.centerXAnchor.constraint(equalTo: baseView.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: baseView.centerYAnchor)
         ]
-        baseView
-            .withChild(loadingIndicator)
-            .withActivatingConstraintsSet(indicatorConstraintsSet)
+        baseView.withChild(loadingIndicator)
+        loadingIndicator.withActivatingConstraintsSet(indicatorConstraintsSet)
         self.indicatorConstraintsSet = indicatorConstraintsSet
         self.baseView = baseView
     }
