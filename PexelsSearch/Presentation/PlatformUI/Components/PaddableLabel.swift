@@ -10,9 +10,23 @@ import UIKit
 
 final class PaddableLabel: UILabel {
     
+    // MARK: Metric(s)
+    
+    private enum Metrics {
+        static let topPadding: CGFloat = 8
+        static let bottomPadding: CGFloat = 8
+        static let leadingPadding: CGFloat = 8
+        static let trailingPadding: CGFloat = 8
+    }
+    
     // MARK: Property(s)
     
-    var textPadding = UIEdgeInsets(top: .zero, left: 8, bottom: .zero, right: .zero)
+    var textPadding = UIEdgeInsets(
+        top: Metrics.topPadding,
+        left: Metrics.leadingPadding,
+        bottom: Metrics.leadingPadding,
+        right: Metrics.trailingPadding
+    )
     
     private var paddingSize: CGSize {
         return CGSize(
