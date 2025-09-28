@@ -20,9 +20,9 @@ extension UIView {
     }
     
     @discardableResult
-    func withActivatingConstraintsSet(_ constraintsSet: [NSLayoutConstraint]) -> Self {
+    func withActivatingConstraintsSet(_ constraintsSet: Set<NSLayoutConstraint>) -> Self {
         translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate(constraintsSet)
+        constraintsSet.forEach { $0.isActive = true }
         return self
     }
 }
