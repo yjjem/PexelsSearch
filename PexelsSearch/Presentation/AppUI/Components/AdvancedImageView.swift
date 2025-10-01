@@ -17,6 +17,8 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
         static let zoomScaleFormat: String = "%.1f x"
         static let minimumZoomScale: CGFloat = 1.0
         static let maximumZoomScale: CGFloat = 6.0
+        static let imageTransitionDuration: CFTimeInterval = 0.44
+        static let imageViewHeightDefaultMultiplier: CGFloat = 1.0
     }
     
     // MARK: Property(s)
@@ -29,11 +31,18 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     private lazy var imageViewLoadingDecorator = LoadingDecorator(baseView: imageView)
     private lazy var currentImageViewHeightConstraint = imageView.heightAnchor.constraint(
         equalTo: imageView.widthAnchor,
-        multiplier: 1.0
+        multiplier: Metrics.imageViewHeightDefaultMultiplier
     )
     private var cancelBag = Set<AnyCancellable>()
     private let imageView = UIImageView()
     private let zoomScaleView = PaddableLabel()
+    private let imageUpdateTransition = {
+        let transition = CATransition()
+        transition.duration = Metrics.imageTransitionDuration
+        transition.type = .fade
+        transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        return transition
+    }()
     
     // MARK: Override(s)
     
@@ -51,7 +60,7 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     
     // MARK: Function(s)
     
-    func prepareImage(_ imageProxy: ImageProxy) {
+    func prepareImage(_ imageProxy: ImageProxy, transitionDuration: CFTimeInterval) {
         imageProxy
             .imagePublisher()
             .receive(on: DispatchQueue.main)
@@ -63,8 +72,8 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
                     self?.imageViewLoadingDecorator.startAnimating()
                 case .success(let uIImage):
                     self?.imageView.image = uIImage
-                    self?.imageViewLoadingDecorator.stopAnimating()
                     self?.updateHeightMultiplier(imageProxy.imageRatio ?? 1.0)
+                    self?.imageViewLoadingDecorator.stopAnimating()
                 case .failed:
                     self?.imageViewLoadingDecorator.stopAnimating()
                 }
@@ -106,6 +115,7 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     }
     
     private func configureViewDetail() {
+        imageView.layer.add(imageUpdateTransition, forKey: nil)
         imageView.contentMode = .scaleAspectFit
         minimumZoomScale = Metrics.minimumZoomScale
         maximumZoomScale = Metrics.maximumZoomScale
