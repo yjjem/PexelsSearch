@@ -1,5 +1,5 @@
 //
-//  PrioritizedDataTaskPublisher.swift
+//  URLSession+PrioritizedDataTaskPublisher.swift
 //  PexelsSearch
 //
 //  Created by Remy Park on 10/15/25.
@@ -8,6 +8,15 @@
 
 import Combine
 import Foundation
+
+extension URLSession {
+    func prioritizedDataTaskPublisher(
+        url: URL,
+        taskPriority: Float = URLSessionDataTask.defaultPriority
+    ) -> AnyPublisher<(data: Data, response: URLResponse), Error> {
+        return PrioritizedDataTaskPublisher(url: url, session: .shared).eraseToAnyPublisher()
+    }
+}
 
 struct PrioritizedDataTaskPublisher : Publisher, Sendable {
     typealias Output = (data: Data, response: URLResponse)
@@ -18,6 +27,11 @@ struct PrioritizedDataTaskPublisher : Publisher, Sendable {
     
     init(request: URLRequest, session: URLSession) {
         self.request = request
+        self.session = session
+    }
+    
+    init(url: URL, session: URLSession) {
+        self.request = URLRequest(url: url)
         self.session = session
     }
     
