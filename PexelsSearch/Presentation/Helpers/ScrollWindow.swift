@@ -8,17 +8,28 @@
 
 import UIKit
 
+enum VerticalScrollDirection {
+    case up
+    case down
+}
+
 struct ScrollWindow {
-    var isClosed: Bool = false
     let minY: CGFloat
     let maxY: CGFloat
     
-    var windowHeight: CGFloat {
-        return maxY - minY
+    var previousPosition: CGFloat = .zero
+    var isClosed: Bool = false
+    var windowHeight: CGFloat { maxY - minY }
+    
+    // MARK: Function(s)
+    
+    static func toIdle() -> ScrollWindow {
+        return ScrollWindow(minY: .zero, maxY: .zero)
     }
     
-    static func idle() -> ScrollWindow {
-        return ScrollWindow(minY: .zero, maxY: .zero)
+    mutating func toNextWindow(with newMaxY: CGFloat) {
+        let nextWindow = ScrollWindow(minY: maxY, maxY: newMaxY)
+        self = nextWindow
     }
     
     func scrollRatio(for positionY: CGFloat) -> CGFloat {
@@ -30,11 +41,18 @@ struct ScrollWindow {
         return min(1, currentWindowOffset / windowHeight)
     }
     
-    mutating func close() {
-        self.isClosed = true
-    }
-    
-    mutating func nextWindow(with newMaxY: CGFloat) {
-        self = ScrollWindow(minY: maxY, maxY: newMaxY)
+    func shouldTriggerFetch(
+        for positionY: CGFloat,
+        whileScrolling toDirection: VerticalScrollDirection,
+        atRatioAbove triggerRatio: CGFloat,
+    ) -> Bool {
+        guard !isClosed else { return false }
+        let relativeScrollRatio = relativeScrollRatio(for: positionY)
+        switch toDirection {
+        case .up:
+            return relativeScrollRatio > triggerRatio
+        case .down:
+            return relativeScrollRatio < triggerRatio
+        }
     }
 }
