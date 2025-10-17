@@ -14,7 +14,12 @@ extension URLSession {
         url: URL,
         taskPriority: Float = URLSessionDataTask.defaultPriority
     ) -> AnyPublisher<(data: Data, response: URLResponse), Error> {
-        return PrioritizedDataTaskPublisher(url: url, session: .shared).eraseToAnyPublisher()
+        return PrioritizedDataTaskPublisher(
+            url: url,
+            session: .shared,
+            taskPriority: taskPriority
+        )
+        .eraseToAnyPublisher()
     }
 }
 
@@ -24,15 +29,26 @@ struct PrioritizedDataTaskPublisher : Publisher, Sendable {
     
     let request: URLRequest
     let session: URLSession
+    let taskPriority: Float
     
-    init(request: URLRequest, session: URLSession) {
+    init(
+        request: URLRequest,
+        session: URLSession,
+        taskPriority: Float = URLSessionDataTask.defaultPriority
+    ) {
         self.request = request
         self.session = session
+        self.taskPriority = taskPriority
     }
     
-    init(url: URL, session: URLSession) {
+    init(
+        url: URL,
+        session: URLSession,
+        taskPriority: Float = URLSessionDataTask.defaultPriority
+    ) {
         self.request = URLRequest(url: url)
         self.session = session
+        self.taskPriority = taskPriority
     }
     
     func receive<S>(
@@ -41,7 +57,8 @@ struct PrioritizedDataTaskPublisher : Publisher, Sendable {
         let subscription = URLSessionSubscription(
             subscriber: subscriber,
             urlSession: session,
-            urlRequest: request
+            urlRequest: request,
+            taskPriority: taskPriority
         )
         return subscriber.receive(subscription: subscription)
     }
