@@ -84,12 +84,16 @@ final class SearchSceneDependencyContainer {
         )
     }
     
-    func makePhotoDetailViewController(_ photoIdentifier: Int) -> PhotoDetailViewController {
+    func makePhotoDetailViewController(
+        photoIdentifier: Int,
+        imageURLString: String
+    ) -> PhotoDetailViewController {
         return PhotoDetailViewController.createWith(
             viewModel: PhotoDetailViewModel(
                 fetchPhotoUseCase: makeFetchPhotoUseCase(),
                 photoIdentifier: photoIdentifier
-            )
+            ),
+            imageURL: imageURLString
         )
     }
 }

@@ -51,8 +51,11 @@ final class SearchCoordinator: Coordinator {
         rootViewController.dismiss(animated: true)
     }
     
-    func pushPhotoDetail(_ photoIdentifier: Int, transition: UIViewController.Transition?) {
-        let photoDetailView = searchSceneDependency.makePhotoDetailViewController(photoIdentifier)
+    func pushPhotoDetail(_ photoListItem: PhotoListItem, transition: UIViewController.Transition?) {
+        let photoDetailView = searchSceneDependency.makePhotoDetailViewController(
+            photoIdentifier: photoListItem.identifier,
+            imageURLString: photoListItem.imageURLString
+        )
         photoDetailView.preferredTransition = transition
         photoDetailView.hidesBottomBarWhenPushed = true
         rootViewController.pushViewController(photoDetailView, animated: true)

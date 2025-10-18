@@ -221,9 +221,11 @@ extension PhotoSearchViewController: UICollectionViewDelegate {
             return
         }
         coordinator?.pushPhotoDetail(
-            photoDetailViewModel.identifier,
-            transition: .zoom { _ in collectionView.cellForItem(at: indexPath)
-            }
+            PhotoListItem(
+                identifier: photoDetailViewModel.identifier,
+                imageURLString: photoDetailViewModel.photoURL
+            ),
+            transition: .zoom { _ in collectionView.cellForItem(at: indexPath) }
         )
     }
     

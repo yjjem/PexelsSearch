@@ -29,8 +29,9 @@ final class PhotoDetailViewController: UIViewController {
     private var viewModel: PhotoDetailViewModel?
     private var cancelBag = Set<AnyCancellable>()
     
-    static func createWith(viewModel: PhotoDetailViewModel) -> PhotoDetailViewController {
+    static func createWith(viewModel: PhotoDetailViewModel, imageURL: String) -> PhotoDetailViewController {
         let photoDetailView = PhotoDetailViewController()
+        photoDetailView.prepareImage(imageURL)
         photoDetailView.viewModel = viewModel
         return photoDetailView
     }
@@ -58,6 +59,10 @@ final class PhotoDetailViewController: UIViewController {
     }
     
     // MARK: Private Function(s)
+    
+    private func prepareImage(_ urlString: String) {
+        imageView.prepareImage(urlString)
+    }
     
     private func bindViewModel() {
         viewModel?.$photoDetailState
