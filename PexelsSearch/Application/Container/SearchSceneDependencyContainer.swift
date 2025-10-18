@@ -65,12 +65,11 @@ final class SearchSceneDependencyContainer {
     func makePhotoSearchViewController(
         coordinator: SearchCoordinator
     ) -> PhotoSearchViewController {
-        return PhotoSearchViewController.create(
-            searchViewModel: PhotoSearchViewModel(
-                searchPhotosUseCase: makeSearchPhotosUseCase()
-            ),
+        let dependency = PhotoSearchViewController.Dependency(
+            viewModel: PhotoSearchViewModel(searchPhotosUseCase: makeSearchPhotosUseCase()),
             coordinator: coordinator
         )
+        return PhotoSearchViewController.create(dependency)
     }
     
     func makePhotoSearchParameterViewController(

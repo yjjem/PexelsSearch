@@ -24,12 +24,20 @@ enum FailureState {
 
 final class PhotoSearchViewModel {
     
-    // MARK: Variable(s)
+    // MARK: Property(s)
     
     @Published private(set) var loadingState: SearchPhotoViewState = .idle
-    @Published private(set) var photoSearchResults: [SearchResult<PhotoViewModel>] = []
+    
+    private var isLoading: Bool {
+        guard case .loading = loadingState else {
+            return false
+        }
+        return true
+    }
     
     private var cancelBag: Set<AnyCancellable> = []
+    private var currentQuery: String = ""
+    
     private let searchPhotosUseCase: SearchPhotosUseCase
     
     init(searchPhotosUseCase: SearchPhotosUseCase) {
@@ -43,35 +51,57 @@ final class PhotoSearchViewModel {
             .debounce(for: 0.2, scheduler: RunLoop.main)
             .removeDuplicates()
             .compactMap { query in
-                self.loadingState = .loading
+                self.toLoadingState(query)
                 return self.searchPhotosUseCase.search(query)
             }
             .switchToLatest()
-            .sink { [weak self] completion in
-                if case .failure(let errorCases) = completion {
-                    let failureState: FailureState
-                    switch errorCases {
-                    case .invalidQuery(message: _):
-                        failureState = .invalidQuery
-                    case .notFound:
-                        failureState = .resultsNotFound
-                    case .unexpected(message: _):
-                        failureState = .somethingWentWrong
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    if case .failure(let errorCases) = completion {
+                        let failureState: FailureState
+                        switch errorCases {
+                        case .invalidQuery(message: _):
+                            failureState = .invalidQuery
+                        case .notFound:
+                            failureState = .resultsNotFound
+                        case .unexpected(message: _):
+                            failureState = .somethingWentWrong
+                        }
+                        self?.loadingState = .failed(failureState)
                     }
-                    self?.loadingState = .failed(failureState)
-                }
-            } receiveValue: { [weak self] photos in
-                let photoViewModels = photos.map { photo in
-                    PhotoViewModel(
-                        description: photo.title,
-                        photographer: photo.photographer.name,
-                        photoURL: photo.source.tiny,
-                        identifier: photo.id
-                    )
-                }
-                let searchResult = SearchResult(items: photoViewModels)
-                self?.loadingState = .loaded(searchResult)
-            }
+                },
+                receiveValue: toLoadedState
+            )
             .store(in: &cancelBag)
+    }
+    
+    func fetchMore() {
+        guard !isLoading else { return }
+        searchPhotosUseCase
+            .search(currentQuery)
+            .sink(
+                receiveCompletion: { _ in  },
+                receiveValue: toLoadedState
+            )
+            .store(in: &cancelBag)
+    }
+    
+    private func toLoadedState(_ photos: [Photo]) {
+        let searchResult = SearchResult(
+            items: photos.map { photo in
+                PhotoViewModel(
+                    description: photo.title,
+                    photographer: photo.photographer.name,
+                    photoURL: photo.source.medium,
+                    identifier: photo.id
+                )
+            }
+        )
+        self.loadingState = .loaded(searchResult)
+    }
+    
+    private func toLoadingState(_ query: String) {
+        self.currentQuery = query
+        self.loadingState = .loading
     }
 }

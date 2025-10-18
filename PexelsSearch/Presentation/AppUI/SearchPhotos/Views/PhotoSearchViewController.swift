@@ -8,39 +8,42 @@
 import UIKit
 import Combine
 
-private typealias DataSource = UICollectionViewDiffableDataSource<Section, PhotoViewModel>
-private typealias SnapShot = NSDiffableDataSourceSnapshot<Section, PhotoViewModel>
-private enum Section {
-    case main
-}
-
-final class PhotoSearchViewController: UIViewController {
+final class PhotoSearchViewController: UIViewController, FactorableViewController {
+    private typealias DataSource = UICollectionViewDiffableDataSource<Section, PhotoViewModel>
+    private typealias SnapShot = NSDiffableDataSourceSnapshot<Section, PhotoViewModel>
+    private enum Section { case main }
+    private enum Metrics {
+        static let filterSymbolImageName = "line.3.horizontal.decrease.circle"
+        static let scopeButtonTitles = ["Photo"]
+    }
+    
+    struct Dependency {
+        let viewModel: PhotoSearchViewModel
+        let coordinator: SearchCoordinator
+    }
+    
+    static func create(_ dependency: Dependency) -> PhotoSearchViewController {
+        let viewController = PhotoSearchViewController()
+        viewController.viewModel = dependency.viewModel
+        viewController.coordinator = dependency.coordinator
+        return viewController
+    }
     
     // MARK: Property(s)
     
-    private var cancelBag: Set<AnyCancellable> = []
+    private lazy var dataSource: DataSource = createDataSource()
+    private var currentWindow: ScrollWindow = .toIdle()
     private var viewModel: PhotoSearchViewModel?
     private var coordinator: SearchCoordinator?
-    private var searchStateConfiguration: UIContentUnavailableConfiguration? {
-        didSet {
-            self.contentUnavailableConfiguration = searchStateConfiguration
-        }
+    private var cancelBag: Set<AnyCancellable> = []
+    private var prefetchBag: [IndexPath: AnyCancellable] = [:]
+    
+    private var scrollContentHeight: CGFloat {
+        collectionView.contentSize.height.rounded(.towardZero)
     }
     
-    private lazy var dataSource: DataSource = createDataSource()
     private let searchController = UISearchController()
-    private let loadingIndicator = UIActivityIndicatorView()
     private let collectionView = UICollectionView(frame: .zero, collectionViewLayout: .init())
-    
-    static func create(
-        searchViewModel: PhotoSearchViewModel,
-        coordinator: SearchCoordinator
-    ) -> PhotoSearchViewController {
-        let searchViewController = PhotoSearchViewController()
-        searchViewController.viewModel = searchViewModel
-        searchViewController.coordinator = coordinator
-        return searchViewController
-    }
     
     // MARK: Override(s)
     
@@ -55,12 +58,17 @@ final class PhotoSearchViewController: UIViewController {
     
     // MARK: Private Function(s)
     
+    private func updateContentState( _ newConfig: UIContentUnavailableConfiguration?) {
+        self.contentUnavailableConfiguration = newConfig
+    }
+    
     private func bindViewModel() {
         let searchTextPublisher = searchController.searchTextPublisher
         searchTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.clearItems()
+                self?.currentWindow = .toIdle()
             }
             .store(in: &cancelBag)
         viewModel?.bind(queryPublisher: searchTextPublisher)
@@ -69,60 +77,53 @@ final class PhotoSearchViewController: UIViewController {
             .sink { [weak self] state in
                 switch state {
                 case .loaded(let searchResult):
-                    self?.addItems(searchResult.items)
                     if searchResult.items.isEmpty {
-                        self?.searchStateConfiguration = .search()
+                        self?.updateContentState(.search())
                     } else {
-                        self?.searchStateConfiguration = nil
+                        self?.updateContentState(.none)
+                        self?.addItems(searchResult.items)
                     }
                 case .loading:
-                    self?.searchStateConfiguration = .loading()
+                    self?.updateContentState(.loading())
                 default:
-                    self?.searchStateConfiguration = .search()
+                    self?.updateContentState(.none)
                 }
             }
             .store(in: &cancelBag)
     }
     
     private func configureNavigationItem() {
-        navigationItem.searchController = searchController
-        searchController.searchBar.showsBookmarkButton = true
-        searchController.searchBar.setImage(
-            UIImage(systemName: "line.3.horizontal.decrease.circle")?.withTintColor(.blue),
-            for: .bookmark,
-            state: .normal
-        )
-        searchController.searchBar.scopeButtonTitles = ["Photo"]
-        searchController.searchBar.selectedScopeButtonIndex = .zero
-        searchController.searchBar.showsScopeBar = true
         navigationItem.preferredSearchBarPlacement = .stacked
+        navigationItem.searchController = searchController
+        let filterImage = UIImage(systemName: Metrics.filterSymbolImageName)?.withTintColor(.blue)
+        searchController.searchBar.setImage(filterImage, for: .bookmark,state: .normal)
+        searchController.searchBar.scopeButtonTitles = Metrics.scopeButtonTitles
+        searchController.searchBar.selectedScopeButtonIndex = .zero
+        searchController.searchBar.showsBookmarkButton = true
+        searchController.searchBar.showsScopeBar = true
         searchController.searchBar.delegate = self
     }
     
     private func configureCollectionView() {
-        collectionView.delegate = self
-        collectionView.dataSource = createDataSource()
-        collectionView.keyboardDismissMode = .onDrag
-        collectionView.setCollectionViewLayout(
-            createGridLayout(
-                columnsCount: 3,
-                interItemSpacing: 10,
-                interGroupSpacing: 10,
-                horizontalInset: 16,
-                verticalInset: 4
-            ),
-            animated: true
+        let collectionGridLayout = createGridLayout(
+            columnsCount: 3,
+            interItemSpacing: 10,
+            interGroupSpacing: 10,
+            horizontalInset: 16,
+            verticalInset: 4
         )
+        collectionView.setCollectionViewLayout(collectionGridLayout, animated: true)
+        collectionView.keyboardDismissMode = .onDrag
+        collectionView.prefetchDataSource = self
+        collectionView.dataSource = dataSource
+        collectionView.delegate = self
     }
     
     private func buildViewLayout() {
         view.addSubview(collectionView)
-        searchStateConfiguration = .search()
-        collectionView.addSubview(loadingIndicator)
+        updateContentState(.search())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.toHorizontalSafeArea(view)
-        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
-        loadingIndicator.toCenter(collectionView)
     }
     
     private func createGridLayout(
@@ -135,7 +136,7 @@ final class PhotoSearchViewController: UIViewController {
         let item = NSCollectionLayoutItem(
             layoutSize: NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1 / columnsCount),
-                heightDimension: .estimated(1)
+                heightDimension: .fractionalWidth(1 / columnsCount)
             )
         )
         let group = NSCollectionLayoutGroup.horizontal(
@@ -188,7 +189,12 @@ final class PhotoSearchViewController: UIViewController {
     private func addItems(_ items: [PhotoViewModel]) {
         var snapShot = dataSource.snapshot()
         snapShot.appendItems(items, toSection: .main)
-        dataSource.apply(snapShot)
+        dataSource.apply(snapShot) {
+            self.collectionView.setNeedsLayout()
+            DispatchQueue.main.async {
+                self.currentWindow.toNextWindow(with: self.scrollContentHeight)
+            }
+        }
     }
     
     private func clearItems() {
@@ -210,18 +216,60 @@ extension PhotoSearchViewController: UISearchBarDelegate {
 // MARK: UICollectionViewDelegate
 
 extension PhotoSearchViewController: UICollectionViewDelegate {
-    func collectionView(
-        _ collectionView: UICollectionView,
-        didSelectItemAt indexPath: IndexPath
-    ) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let photoDetailViewModel = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
         coordinator?.pushPhotoDetail(
             photoDetailViewModel.identifier,
-            transition: .zoom { _ in
-                collectionView.cellForItem(at: indexPath)
+            transition: .zoom { _ in collectionView.cellForItem(at: indexPath)
             }
         )
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        fetchMoreIfNeeded(with: scrollView)
+    }
+    
+    private func fetchMoreIfNeeded(with scrollView: UIScrollView) {
+        let topSafeAreaHeight = collectionView.safeAreaInsets.top
+        let contentOffsetY = scrollView.contentOffset.y.rounded(.towardZero)
+        let currentPositionY = contentOffsetY + topSafeAreaHeight + collectionView.bounds.height
+        if currentWindow.shouldTriggerFetch(
+            for: currentPositionY,
+            whileScrolling: .down,
+            atRatioAbove: 0.8
+        ) {
+            viewModel?.fetchMore()
+            currentWindow.isClosed = true
+        }
+        self.currentWindow.previousPosition = contentOffsetY
+    }
+}
+
+// MARK: UICollectionViewDataSourcePrefetching
+
+extension PhotoSearchViewController: UICollectionViewDataSourcePrefetching {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        prefetchItemsAt indexPaths: [IndexPath]
+    ) {
+        for path in indexPaths {
+            guard let itemAtPath = dataSource.itemIdentifier(for: path),
+                  let itemURL = URL(string: itemAtPath.photoURL) else {
+                return
+            }
+            prefetchBag[path] = ImageManager.shared.prefetch(url: itemURL)
+        }
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cancelPrefetchingForItemsAt indexPaths: [IndexPath]
+    ) {
+        for path in indexPaths {
+            let prefetchToken = prefetchBag.removeValue(forKey: path)
+            prefetchToken?.cancel()
+        }
     }
 }
