@@ -14,9 +14,13 @@ final class PhotoDetailViewController: UIViewController {
     // MARK: Metric(s)
     
     private enum Metrics {
+        static let bookmarkSymbolName: String = "bookmark.fill"
+        static let notBookMarkedSymbolName: String = "bookmark"
+        static let likeSymbolName: String = "heart.fill"
+        static let dislikeSymbolName: String = "heart"
         static let scrollViewHorizontalPadding: CGFloat = 16
-        static let scrollViewVerticalPadding: CGFloat = 10
         static let imageMinimumHeightConstant: CGFloat = 100
+        static let scrollViewVerticalPadding: CGFloat = 10
         static let imageDescriptionLineNumbers: Int = 2
     }
     
@@ -24,9 +28,15 @@ final class PhotoDetailViewController: UIViewController {
     
     private var viewModel: PhotoDetailViewModel?
     private var cancelBag = Set<AnyCancellable>()
-    private var saveButton: UIBarButtonItem?
-    private var likeButton: UIBarButtonItem?
     
+    static func createWith(viewModel: PhotoDetailViewModel) -> PhotoDetailViewController {
+        let photoDetailView = PhotoDetailViewController()
+        photoDetailView.viewModel = viewModel
+        return photoDetailView
+    }
+    
+    private let likeButton = UIBarButtonItem()
+    private let saveButton = UIBarButtonItem()
     private let scrollContentView = UIStackView()
     private let scrollView = UIScrollView()
     private let imageView = AdvancedImageView()
@@ -35,12 +45,6 @@ final class PhotoDetailViewController: UIViewController {
     private let imagePhotographerLabel = PaddableLabel()
     private let imageDescriptionLabel = PaddableLabel()
     private let imageSizeLabel = PaddableLabel()
-    
-    static func createWith(viewModel: PhotoDetailViewModel) -> PhotoDetailViewController {
-        let photoDetailView = PhotoDetailViewController()
-        photoDetailView.viewModel = viewModel
-        return photoDetailView
-    }
     
     // MARK: Override(s)
     
@@ -58,39 +62,31 @@ final class PhotoDetailViewController: UIViewController {
     private func bindViewModel() {
         viewModel?.$photoDetailState
             .receive(on: DispatchQueue.main)
-            .sink {  photoDetailState in
-                self.imagePhotographerLabel.text = photoDetailState?.providerName
-                self.imageDescriptionLabel.text = photoDetailState?.description
-                self.imageSizeLabel.text = photoDetailState?.sizeDisplayText
-                if let photoDetailState  {
-                    let imageProxy = ImageProxy(
-                        imageURL: photoDetailState.photoURL,
-                        imageSize: CGSize(width: photoDetailState.width, height: photoDetailState.height)
-                    )
-                    self.imageView.prepareImage(imageProxy)
-                }
-            }
-            .store(in: &cancelBag)
-        
-        viewModel?
-            .$isLiked
             .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLiked in
-                let likedButtonSymbolName = isLiked ? "heart.fill" : "heart"
-                guard let symbol = UIImage(systemName: likedButtonSymbolName) else {
-                    return
-                }
-                self?.likeButton?.setSymbolImage(symbol, contentTransition: .replace)
+            .sink { [weak self] photoDetailState in
+                self?.displayPhotoDetails(photoDetailState)
             }
             .store(in: &cancelBag)
     }
     
-    // MARK: TODO: Refactor
+    private func displayPhotoDetails(_ photoDetail: PhotoDetailState) {
+        imagePhotographerLabel.text = photoDetail.providerName
+        imageDescriptionLabel.text = photoDetail.description
+        imageSizeLabel.text = photoDetail.sizeDisplayText
+        ImageManager.shared
+            .image(urlString: photoDetail.photoURL)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { [weak imageView] image in
+                    imageView?.image = image
+                }
+            )
+            .store(in: &cancelBag)
+    }
     
     private func configureLayoutConstraints() {
         view.addSubview(scrollView)
-
         scrollView
             .withChild(scrollContentView)
             .withActivatingConstraintsSet([
@@ -111,7 +107,6 @@ final class PhotoDetailViewController: UIViewController {
                 scrollContentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
             ])
         
-//        let imageRatio = (imageView.image?.size.height / imageView.image?.size.width)
         imageView
             .withActivatingConstraintsSet([
                 imageView.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor),
@@ -119,7 +114,6 @@ final class PhotoDetailViewController: UIViewController {
                 imageView.topAnchor.constraint(equalTo: scrollContentView.topAnchor),
                 imageView.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
-//                imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier:)
             ])
         
         imageInformationStack
@@ -128,7 +122,7 @@ final class PhotoDetailViewController: UIViewController {
             .withActivatingConstraintsSet([
                 imageInformationStack.topAnchor.constraint(equalTo: imageView.bottomAnchor),
                 imageInformationStack.leadingAnchor.constraint(equalTo: scrollContentView.safeAreaLayoutGuide.leadingAnchor),
-                imageInformationStack.trailingAnchor.constraint(equalTo: scrollContentView.safeAreaLayoutGuide.trailingAnchor),
+                imageInformationStack.trailingAnchor.constraint(equalTo:  scrollContentView.safeAreaLayoutGuide.trailingAnchor),
                 imageInformationStack.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor)
             ])
     }
@@ -137,49 +131,59 @@ final class PhotoDetailViewController: UIViewController {
         view.backgroundColor = .systemBackground
         scrollContentView.axis = .vertical
         scrollContentView.backgroundColor = .secondarySystemBackground
-        imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .secondarySystemBackground
         imageInformationStack.backgroundColor = .systemBackground
         imageSizeLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
-        
-        if let titleDescriptor = UIFontDescriptor
-            .preferredFontDescriptor(withTextStyle: .title2)
-            .withSymbolicTraits(.traitBold) {
-            
-            imagePhotographerLabel.font = UIFont(
-                descriptor: titleDescriptor,
-                size: titleDescriptor.pointSize
-            )
-        }
         imageDescriptionLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         imageDescriptionLabel.numberOfLines = Metrics.imageDescriptionLineNumbers
         imageInformationStack.axis = .vertical
+        if let titleFontDescriptor = UIFontDescriptor
+            .preferredFontDescriptor(withTextStyle: .title2)
+            .withSymbolicTraits(.traitBold) {
+            imagePhotographerLabel.font = UIFont(
+                descriptor: titleFontDescriptor,
+                size: titleFontDescriptor.pointSize
+            )
+        }
     }
     
     private func configureNavigationItems() {
-        let likeButton = UIBarButtonItem(
-            image: UIImage(systemName: "heart"),
-            primaryAction: onTapLikeAction()
-        )
-        let saveButton = UIBarButtonItem(
-            image: UIImage(systemName: "bookmark"),
-            primaryAction: onTapSaveAction()
-        )
-        navigationItem.rightBarButtonItems = [likeButton, saveButton]
+        likeButton.primaryAction = onTapLikeAction()
+        saveButton.primaryAction = onTapSaveAction()
+        updateLikedButton(viewModel?.isLiked ?? false)
+        updateSavedButton(viewModel?.isSaved ?? false)
+        navigationItem.rightBarButtonItems = [saveButton, likeButton]
         navigationItem.largeTitleDisplayMode = .never
-        self.likeButton = likeButton
-        self.saveButton = saveButton
+    }
+    
+    private func updateLikedButton(_ isLiked: Bool) {
+        let symbolName = isLiked ? Metrics.likeSymbolName : Metrics.dislikeSymbolName
+        if let symbolImage = UIImage(systemName: symbolName) {
+            likeButton.setSymbolImage(symbolImage, contentTransition: .replace)
+        }
+    }
+    
+    private func updateSavedButton(_ isSaved: Bool) {
+        let symbolName = isSaved ? Metrics.bookmarkSymbolName : Metrics.notBookMarkedSymbolName
+        if let symbolImage = UIImage(systemName: symbolName) {
+            saveButton.setSymbolImage(symbolImage, contentTransition: .replace)
+        }
     }
     
     private func onTapLikeAction() -> UIAction {
-        return UIAction { [weak viewModel] _ in
-            viewModel?.onTapLike()
+        return UIAction { [weak self] action in
+            self?.viewModel?.onTapLike()
+            if let isLiked = self?.viewModel?.isLiked {
+                self?.updateLikedButton(isLiked)
+            }
         }
     }
     
     private func onTapSaveAction() -> UIAction {
-        return UIAction { [weak viewModel] _ in
-            viewModel?.onTapSave()
+        return UIAction { [weak self] action in
+            self?.viewModel?.onTapSave()
+            if let photoIsSaved = self?.viewModel?.isSaved {
+                self?.updateSavedButton(photoIsSaved)
+            }
         }
     }
 }
