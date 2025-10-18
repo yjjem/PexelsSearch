@@ -54,7 +54,7 @@ final class PhotoCellContentView: UIView, UIContentView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: Private Function(s)
     
     private func configureLayout() {
@@ -84,12 +84,14 @@ final class PhotoCellContentView: UIView, UIContentView {
         
         self.imageView.image = nil
         ImageManager.shared
-            .image(for: configuration.imageURL)
+            .image(urlString: configuration.imageURL)
             .receive(on: DispatchQueue.main)
-            .sink { _ in
-            } receiveValue: { image in
-                self.imageView.image = image
-            }
+            .sink(
+                receiveCompletion:  { _ in },
+                receiveValue: { image in
+                    self.imageView.image = image
+                }
+            )
             .store(in: &cancelBag)
         self.currentConfiguration = configuration
     }

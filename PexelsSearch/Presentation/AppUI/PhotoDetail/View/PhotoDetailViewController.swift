@@ -73,16 +73,7 @@ final class PhotoDetailViewController: UIViewController {
         imagePhotographerLabel.text = photoDetail.providerName
         imageDescriptionLabel.text = photoDetail.description
         imageSizeLabel.text = photoDetail.sizeDisplayText
-        ImageManager.shared
-            .image(urlString: photoDetail.photoURL)
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { [weak imageView] image in
-                    imageView?.image = image
-                }
-            )
-            .store(in: &cancelBag)
+        imageView.prepareImage(photoDetail.photoURL)
     }
     
     private func configureLayoutConstraints() {

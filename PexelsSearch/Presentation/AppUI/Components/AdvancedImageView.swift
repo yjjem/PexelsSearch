@@ -60,24 +60,16 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     
     // MARK: Function(s)
     
-    func prepareImage(_ imageProxy: ImageProxy, transitionDuration: CFTimeInterval) {
-        imageProxy
-            .imagePublisher()
+    func prepareImage(_ urlString: String) {
+        ImageManager.shared
+            .image(urlString: urlString)
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] state in
-                switch state {
-                case .idle:
-                    return
-                case .loading:
-                    self?.imageViewLoadingDecorator.startAnimating()
-                case .success(let uIImage):
-                    self?.imageView.image = uIImage
-                    self?.updateHeightMultiplier(imageProxy.imageRatio ?? 1.0)
-                    self?.imageViewLoadingDecorator.stopAnimating()
-                case .failed:
-                    self?.imageViewLoadingDecorator.stopAnimating()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { image in
+                    self.imageView.image = image
                 }
-            })
+            )
             .store(in: &cancelBag)
     }
     
