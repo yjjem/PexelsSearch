@@ -23,6 +23,7 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
     
     // MARK: Property(s)
     
+    var fitsToImageRatio: Bool = true
     var hidesZoomScaleOnMinimumValue: Bool = false
     var currentImage: UIImage? {
         return imageView.image
@@ -66,8 +67,9 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { _ in },
-                receiveValue: { image in
-                    self.imageView.image = image
+                receiveValue: { [weak self] image in
+                    self?.imageView.image = image
+                    self?.updateHeightMultiplierIfNeeded(image.size)
                 }
             )
             .store(in: &cancelBag)
@@ -120,12 +122,17 @@ final class AdvancedImageView: UIScrollView, UIScrollViewDelegate {
         zoomScaleView.text = String(format: Metrics.zoomScaleFormat, zoomScale)
     }
     
-    private func updateHeightMultiplier(_ heightMultiplier: CGFloat) {
-        currentImageViewHeightConstraint.isActive = false
+    private func updateHeightMultiplierIfNeeded(_ imageSize: CGSize) {
+        guard fitsToImageRatio else {
+            return
+        }
+        let height = imageSize.height
+        let width = imageSize.width
         let newHeightConstraint = imageView.heightAnchor.constraint(
             equalTo: imageView.widthAnchor,
-            multiplier: heightMultiplier
+            multiplier: height / width
         )
+        currentImageViewHeightConstraint.isActive = false
         newHeightConstraint.isActive = true
         currentImageViewHeightConstraint = newHeightConstraint
     }
