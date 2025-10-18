@@ -92,7 +92,7 @@ final class PhotoSearchViewModel {
                 PhotoViewModel(
                     description: photo.title,
                     photographer: photo.photographer.name,
-                    photoURL: photo.source.medium,
+                    photoURL: photo.source.large,
                     identifier: photo.id
                 )
             }
