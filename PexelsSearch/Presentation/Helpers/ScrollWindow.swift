@@ -9,27 +9,39 @@
 import UIKit
 
 enum VerticalScrollDirection {
-    case up
-    case down
+    case up, down
+    
+    func decisionFunction(_ currentRatio: CGFloat, _ triggerRatio: CGFloat) -> Bool {
+        switch self {
+        case .up:
+            return currentRatio <= triggerRatio
+        case .down:
+            return currentRatio >= triggerRatio
+        }
+    }
 }
 
-struct ScrollWindow {
-    let minY: CGFloat
-    let maxY: CGFloat
+final class ScrollWindow {
     
-    var previousPosition: CGFloat = .zero
-    var isClosed: Bool = false
-    var windowHeight: CGFloat { maxY - minY }
+    // MARK: Property(s)
+    
+    private var minY: CGFloat = .zero
+    private var maxY: CGFloat = .zero
+    private var isClosed: Bool = false
+    private var windowHeight: CGFloat { maxY - minY }
     
     // MARK: Function(s)
     
-    static func toIdle() -> ScrollWindow {
-        return ScrollWindow(minY: .zero, maxY: .zero)
+    func resetWindow() {
+        self.isClosed = false
+        self.minY = .zero
+        self.maxY = .zero
     }
     
-    mutating func toNextWindow(with newMaxY: CGFloat) {
-        let nextWindow = ScrollWindow(minY: maxY, maxY: newMaxY)
-        self = nextWindow
+    func toNextWindow(with newMaxY: CGFloat) {
+        self.minY = maxY
+        self.maxY = newMaxY
+        self.isClosed = false
     }
     
     func scrollRatio(for positionY: CGFloat) -> CGFloat {
@@ -48,11 +60,8 @@ struct ScrollWindow {
     ) -> Bool {
         guard !isClosed else { return false }
         let relativeScrollRatio = relativeScrollRatio(for: positionY)
-        switch toDirection {
-        case .up:
-            return relativeScrollRatio > triggerRatio
-        case .down:
-            return relativeScrollRatio < triggerRatio
-        }
+        let shouldTrigger = toDirection.decisionFunction(relativeScrollRatio, triggerRatio)
+        self.isClosed = shouldTrigger
+        return shouldTrigger
     }
 }
