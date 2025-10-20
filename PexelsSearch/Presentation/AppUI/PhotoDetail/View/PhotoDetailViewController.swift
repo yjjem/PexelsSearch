@@ -21,7 +21,6 @@ final class PhotoDetailViewController: UIViewController {
         static let scrollViewHorizontalPadding: CGFloat = 16
         static let imageMinimumHeightConstant: CGFloat = 100
         static let scrollViewVerticalPadding: CGFloat = 10
-        static let imageDescriptionLineNumbers: Int = 2
     }
     
     // MARK: Property(s)
@@ -42,10 +41,7 @@ final class PhotoDetailViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let imageView = AdvancedImageView()
     private let imageButtonStack = UIStackView()
-    private let imageInformationStack = UIStackView()
-    private let imagePhotographerLabel = PaddableLabel()
-    private let imageDescriptionLabel = PaddableLabel()
-    private let imageSizeLabel = PaddableLabel()
+    private let photoInformationView = PhotoInformationView()
     
     // MARK: Override(s)
     
@@ -75,10 +71,9 @@ final class PhotoDetailViewController: UIViewController {
     }
     
     private func displayPhotoDetails(_ photoDetail: PhotoDetailState) {
-        imagePhotographerLabel.text = photoDetail.providerName
-        imageDescriptionLabel.text = photoDetail.description
-        imageSizeLabel.text = photoDetail.sizeDisplayText
         imageView.prepareImage(photoDetail.photoURL)
+        photoInformationView.update(photoDetail)
+        scrollContentView.layoutIfNeeded()
     }
     
     private func configureLayoutConstraints() {
@@ -94,7 +89,7 @@ final class PhotoDetailViewController: UIViewController {
         
         scrollContentView
             .withChild(imageView)
-            .withChild(imageInformationStack)
+            .withChild(photoInformationView)
             .withActivatingConstraintsSet([
                 scrollContentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
                 scrollContentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
@@ -106,40 +101,16 @@ final class PhotoDetailViewController: UIViewController {
         imageView
             .withActivatingConstraintsSet([
                 imageView.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor),
-                imageView.bottomAnchor.constraint(equalTo: imageInformationStack.topAnchor),
                 imageView.topAnchor.constraint(equalTo: scrollContentView.topAnchor),
                 imageView.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
                 imageView.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
-            ])
-        
-        imageInformationStack
-            .withChild(imagePhotographerLabel)
-            .withChild(imageDescriptionLabel)
-            .withActivatingConstraintsSet([
-                imageInformationStack.topAnchor.constraint(equalTo: imageView.bottomAnchor),
-                imageInformationStack.leadingAnchor.constraint(equalTo: scrollContentView.safeAreaLayoutGuide.leadingAnchor),
-                imageInformationStack.trailingAnchor.constraint(equalTo:  scrollContentView.safeAreaLayoutGuide.trailingAnchor),
-                imageInformationStack.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor)
             ])
     }
     
     private func configureLayoutStyle() {
         view.backgroundColor = .systemBackground
         scrollContentView.axis = .vertical
-        scrollContentView.backgroundColor = .secondarySystemBackground
-        imageInformationStack.backgroundColor = .systemBackground
-        imageSizeLabel.font = UIFont.preferredFont(forTextStyle: .caption1)
-        imageDescriptionLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
-        imageDescriptionLabel.numberOfLines = Metrics.imageDescriptionLineNumbers
-        imageInformationStack.axis = .vertical
-        if let titleFontDescriptor = UIFontDescriptor
-            .preferredFontDescriptor(withTextStyle: .title2)
-            .withSymbolicTraits(.traitBold) {
-            imagePhotographerLabel.font = UIFont(
-                descriptor: titleFontDescriptor,
-                size: titleFontDescriptor.pointSize
-            )
-        }
+//        scrollContentView.backgroundColor = .secondarySystemBackground
     }
     
     private func configureNavigationItems() {
