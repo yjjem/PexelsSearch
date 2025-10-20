@@ -32,7 +32,7 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     // MARK: Property(s)
     
     private lazy var dataSource: DataSource = createDataSource()
-    private var currentWindow: ScrollWindow = .toIdle()
+    private var currentWindow: ScrollWindow = .init()
     private var viewModel: PhotoSearchViewModel?
     private var coordinator: SearchCoordinator?
     private var cancelBag: Set<AnyCancellable> = []
@@ -58,20 +58,26 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     
     // MARK: Private Function(s)
     
-    private func updateContentState( _ newConfig: UIContentUnavailableConfiguration?) {
+    private func updateContentState(_ newConfig: UIContentUnavailableConfiguration?) {
         self.contentUnavailableConfiguration = newConfig
     }
     
     private func bindViewModel() {
-        let searchTextPublisher = searchController.searchTextPublisher
-        searchTextPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.clearItems()
-                self?.currentWindow = .toIdle()
-            }
-            .store(in: &cancelBag)
-        viewModel?.bind(queryPublisher: searchTextPublisher)
+        viewModel?.bind()
+        if let viewModel {
+            searchController.searchTextPublisher
+                .removeDuplicates()
+                .dropFirst()
+                .drop(while: \.isEmpty)
+                .handleEvents(
+                    receiveOutput: { [weak self] _ in
+                        self?.clearItems()
+                        self?.currentWindow.resetWindow()
+                    }
+                )
+                .assign(to: \.currentQuery, on: viewModel)
+                .store(in: &cancelBag)
+        }
         viewModel?.$loadingState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
@@ -86,7 +92,7 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
                 case .loading:
                     self?.updateContentState(.loading())
                 default:
-                    self?.updateContentState(.none)
+                    self?.updateContentState(.search())
                 }
             }
             .store(in: &cancelBag)
@@ -211,6 +217,11 @@ extension PhotoSearchViewController: UISearchBarDelegate {
     func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
         coordinator?.presentSelectParameter(true)
     }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        updateContentState(.none)
+        viewModel?.currentQuery = ""
+    }
 }
 
 // MARK: UICollectionViewDelegate
@@ -243,9 +254,7 @@ extension PhotoSearchViewController: UICollectionViewDelegate {
             atRatioAbove: 0.8
         ) {
             viewModel?.fetchMore()
-            currentWindow.isClosed = true
         }
-        self.currentWindow.previousPosition = contentOffsetY
     }
 }
 
