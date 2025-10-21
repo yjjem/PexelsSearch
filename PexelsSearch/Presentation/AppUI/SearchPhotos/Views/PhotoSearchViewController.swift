@@ -169,12 +169,32 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
             bottom: verticalInset,
             trailing: horizontalInset
         )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .absolute(80)
+            ),
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        section.boundarySupplementaryItems = [footer]
         return UICollectionViewCompositionalLayout(section: section)
+    }
+    
+    private func createLoadingFooterRegistration(
+    ) -> UICollectionView.SupplementaryRegistration<UICollectionViewListCell> {
+        return .init(elementKind: UICollectionView.elementKindSectionFooter) {
+            supplementaryView, elementKind, indexPath in
+            var content = supplementaryView.loadingConfiguration()
+            content.isLoading = !self.isContentEmpty
+            supplementaryView.contentConfiguration = content
+            supplementaryView.isHidden = self.isContentEmpty
+        }
     }
     
     private func createDataSource() -> DataSource {
         let photoCellRegistration = createPhotoListCellRegistration()
-        return DataSource(collectionView: collectionView) {
+        let dataSource = DataSource(collectionView: collectionView) {
             collectionView, indexPath, itemIdentifier in
             collectionView.dequeueConfiguredReusableCell(
                 using: photoCellRegistration,
@@ -182,6 +202,16 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
                 item: itemIdentifier
             )
         }
+        
+        let loadingFooterRegistration = createLoadingFooterRegistration()
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            collectionView.dequeueConfiguredReusableSupplementary(
+                using: loadingFooterRegistration,
+                for: indexPath
+            )
+        }
+        
+        return dataSource
     }
     
     private func createPhotoListCellRegistration(
