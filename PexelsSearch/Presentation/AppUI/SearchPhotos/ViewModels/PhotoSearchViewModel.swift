@@ -9,10 +9,10 @@
 import UIKit
 import Combine
 
-enum SearchPhotoViewState {
+enum SearchState<Item> {
     case idle
     case loading
-    case loaded(SearchResult<PhotoViewModel>)
+    case loaded(Item)
     case failed(FailureState)
 }
 
@@ -23,21 +23,25 @@ enum FailureState {
 }
 
 final class PhotoSearchViewModel {
+    typealias PhotoSearchState = SearchState<[PhotoViewModel]>
+    
+    struct Input {
+        let searchQueryPublisher: AnyPublisher<String, Never>
+        let fetchMorePublisher: AnyPublisher<Void, Never>
+    }
+    
+    struct Output {
+        let searchState: AnyPublisher<PhotoSearchState, Never>
+    }
     
     // MARK: Property(s)
     
-    @Published private(set) var loadingState: SearchPhotoViewState = .idle
-    
-    private var isLoading: Bool {
-        guard case .loading = loadingState else {
-            return false
-        }
-        return true
-    }
-    
-    private var cancelBag: Set<AnyCancellable> = []
+    private var isLoading: Bool = false
     private var currentQuery: String = ""
+    private var searchToken: AnyCancellable?
+    private var cancelBag: Set<AnyCancellable> = []
     
+    private let searchState: CurrentValueSubject<PhotoSearchState, Never> = .init(.idle)
     private let searchPhotosUseCase: SearchPhotosUseCase
     
     init(searchPhotosUseCase: SearchPhotosUseCase) {
@@ -46,62 +50,53 @@ final class PhotoSearchViewModel {
     
     // MARK: Function(s)
     
-    func bind(queryPublisher: AnyPublisher<String, Never>) {
-        queryPublisher
-            .debounce(for: 0.2, scheduler: RunLoop.main)
+    func bind(_ input: Input) -> Output {
+        input.searchQueryPublisher
+            .drop(while: \.isEmpty)
             .removeDuplicates()
-            .compactMap { query in
-                self.toLoadingState(query)
-                return self.searchPhotosUseCase.search(query)
-            }
-            .switchToLatest()
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure(let errorCases) = completion {
-                        let failureState: FailureState
-                        switch errorCases {
-                        case .invalidQuery(message: _):
-                            failureState = .invalidQuery
-                        case .notFound:
-                            failureState = .resultsNotFound
-                        case .unexpected(message: _):
-                            failureState = .somethingWentWrong
-                        }
-                        self?.loadingState = .failed(failureState)
-                    }
-                },
-                receiveValue: toLoadedState
-            )
+            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+            .sink(receiveValue: search)
             .store(in: &cancelBag)
-    }
-    
-    func fetchMore() {
-        guard !isLoading else { return }
-        searchPhotosUseCase
-            .search(currentQuery)
-            .sink(
-                receiveCompletion: { _ in  },
-                receiveValue: toLoadedState
-            )
+        
+        input.fetchMorePublisher
+            .print()
+//            .throttle(for: .milliseconds(500), scheduler: RunLoop.main, latest: false)
+            .combineLatest(input.searchQueryPublisher)
+            .map { _, query in return query }
+            .filter { !$0.isEmpty }
+            .filter { _ in !self.isLoading }
+            .sink(receiveValue: search)
             .store(in: &cancelBag)
+        
+        return Output(searchState: searchState.eraseToAnyPublisher())
     }
     
-    private func toLoadedState(_ photos: [Photo]) {
-        let searchResult = SearchResult(
-            items: photos.map { photo in
-                PhotoViewModel(
-                    description: photo.title,
-                    photographer: photo.photographer.name,
-                    photoURL: photo.source.large,
-                    identifier: photo.id
-                )
-            }
-        )
-        self.loadingState = .loaded(searchResult)
+    func search(_ query: String) {
+        searchToken?.cancel()
+        searchToken = searchPhotosUseCase
+            .search(query)
+            .handleEvents(receiveRequest: { _ in
+                self.isLoading = true
+                self.searchState.send(.loading)
+            })
+            .map(toLoadedState)
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { [weak self] state in
+                    self?.isLoading = false
+                    self?.searchState.send(.loaded(state))
+                }
+            )
     }
     
-    private func toLoadingState(_ query: String) {
-        self.currentQuery = query
-        self.loadingState = .loading
+    private func toLoadedState(_ photos: [Photo]) -> [PhotoViewModel] {
+        return photos.map { photo in
+            PhotoViewModel(
+                description: photo.title,
+                photographer: photo.photographer.name,
+                photoURL: photo.source.large,
+                identifier: photo.id
+            )
+        }
     }
 }

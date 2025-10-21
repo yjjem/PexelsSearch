@@ -31,6 +31,7 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     
     // MARK: Property(s)
     
+    private let fetchMoreSubject = PassthroughSubject<Void, Never>()
     private lazy var dataSource: DataSource = createDataSource()
     private var currentWindow: ScrollWindow = .init()
     private var viewModel: PhotoSearchViewModel?
@@ -40,6 +41,10 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     
     private var scrollContentHeight: CGFloat {
         collectionView.contentSize.height.rounded(.towardZero)
+    }
+    
+    private var isContentEmpty: Bool {
+        dataSource.snapshot().numberOfItems(inSection: .main) == 0
     }
     
     private let searchController = UISearchController()
@@ -63,42 +68,45 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     }
     
     private func bindViewModel() {
-        viewModel?.bind()
-        if let viewModel {
-            searchController.searchTextPublisher
-                .removeDuplicates()
-                .dropFirst()
-                .drop(while: \.isEmpty)
-                .handleEvents(
-                    receiveOutput: { [weak self] _ in
-                        self?.clearItems()
-                        self?.currentWindow.resetWindow()
-                    }
-                )
-                .assign(to: \.currentQuery, on: viewModel)
-                .store(in: &cancelBag)
-        }
-        viewModel?.$loadingState
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                switch state {
-                case .loaded(let searchResult):
-                    if searchResult.items.isEmpty {
-                        self?.updateContentState(.search())
-                    } else {
-                        self?.updateContentState(.none)
-                        self?.addItems(searchResult.items)
-                    }
-                case .loading:
-                    self?.updateContentState(.loading())
-                default:
-                    self?.updateContentState(.search())
+        let searchQueryInput = searchController.searchTextPublisher
+            .removeDuplicates()
+            .dropFirst()
+            .drop(while: \.isEmpty)
+            .handleEvents(
+                receiveOutput: { [weak self] _ in
+                    self?.clearItems()
+                    self?.currentWindow.resetWindow()
                 }
-            }
+            )
+        let input = PhotoSearchViewModel.Input(
+            searchQueryPublisher: searchQueryInput.eraseToAnyPublisher(),
+            fetchMorePublisher: fetchMoreSubject.eraseToAnyPublisher()
+        )
+        let output = viewModel?.bind(input)
+        
+        output?.searchState
+            .receive(on: DispatchQueue.main)
+            .map(handleLoadingState)
+            .sink(receiveValue: updateContentState)
             .store(in: &cancelBag)
     }
     
+    private func handleLoadingState(
+        _ state: SearchState<[PhotoViewModel]>
+    ) -> UIContentUnavailableConfiguration? {
+        switch state {
+        case .loaded(let searchResult):
+            addItems(searchResult)
+            return searchResult.isEmpty ? .search() : .none
+        case .loading:
+            return isContentEmpty ? .loading() : .none
+        default:
+            return .search()
+        }
+    }
+    
     private func configureNavigationItem() {
+        searchController.searchBar.prompt = "fuck you"
         navigationItem.preferredSearchBarPlacement = .stacked
         navigationItem.searchController = searchController
         let filterImage = UIImage(systemName: Metrics.filterSymbolImageName)?.withTintColor(.blue)
@@ -219,8 +227,8 @@ extension PhotoSearchViewController: UISearchBarDelegate {
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        updateContentState(.none)
-        viewModel?.currentQuery = ""
+        updateContentState(.search())
+        clearItems()
     }
 }
 
@@ -253,7 +261,7 @@ extension PhotoSearchViewController: UICollectionViewDelegate {
             whileScrolling: .down,
             atRatioAbove: 0.8
         ) {
-            viewModel?.fetchMore()
+            fetchMoreSubject.send()
         }
     }
 }
