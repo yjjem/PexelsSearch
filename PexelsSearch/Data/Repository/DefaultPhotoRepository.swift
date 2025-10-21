@@ -26,10 +26,7 @@ final class DefaultPhotoRepository: PhotoRepository {
     
     func fetchPhoto(by id: Int) -> AnyPublisher<Photo, FetchPhotoError> {
         return photoPersistence.fetchPhoto(by: id)
-            .mapError { error in
-                print(error)
-                return .unexpected
-            }
+            .mapError { _ in return .unexpected }
             .map { response in
                 Photo(
                     id: response.id,
