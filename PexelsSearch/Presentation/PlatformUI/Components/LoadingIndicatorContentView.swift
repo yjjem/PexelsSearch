@@ -7,6 +7,12 @@
 
 
 import UIKit
+    
+extension UICollectionViewListCell {
+    func loadingConfiguration() -> LoadingIndicatorContentView.Configuration {
+        return LoadingIndicatorContentView.Configuration()
+    }
+}
 
 final class LoadingIndicatorContentView: UIView,  UIContentView {
     struct Configuration: UIContentConfiguration {
