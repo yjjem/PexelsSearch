@@ -8,8 +8,15 @@
 import UIKit
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    
+    // MARK: Variable(s)
 
     var window: UIWindow?
+    
+    private let applicationDependency = ApplicationDependencyContainer()
+    private var appCoordinator: AppCoordinator?
+    
+    // MARK: Function(s)
 
     func scene(
         _ scene: UIScene,
@@ -19,11 +26,15 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else {
             return
         }
-        let rootViewController = ViewController()
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = rootViewController
-        window.makeKeyAndVisible()
+        let appCoordinator = AppCoordinator(
+            window: window,
+            applicationDependency: applicationDependency
+        )
         self.window = window
+        self.appCoordinator = appCoordinator
+        
+        appCoordinator.start()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) { }
