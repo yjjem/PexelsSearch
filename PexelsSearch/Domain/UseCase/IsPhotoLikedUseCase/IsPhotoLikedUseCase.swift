@@ -11,3 +11,23 @@ import Combine
 protocol IsPhotoLikedUseCase {
     func execute(id: Int) -> AnyPublisher<Bool, Never>
 }
+
+final class DefaultIsPhotoLikedUseCase: IsPhotoLikedUseCase {
+    
+    // MARK: Property(s)
+    
+    private let repository: LikedPhotosRepository
+    
+    init(repository: LikedPhotosRepository) {
+        self.repository = repository
+    }
+    
+    // MARK: Function(s)
+    
+    func execute(id: Int) -> AnyPublisher<Bool, Never> {
+        return repository.read(id)
+            .map { _ in true }
+            .replaceError(with: false)
+            .eraseToAnyPublisher()
+    }
+}
