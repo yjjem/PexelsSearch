@@ -8,6 +8,12 @@
 
 import CoreData
 
+enum CoreDataStackError: Error {
+    case fetchError(Error)
+    case updateError(Error)
+    case deleteError(Error)
+}
+
 final class CoreDataStack {
     
     // MARK: Property(s)
