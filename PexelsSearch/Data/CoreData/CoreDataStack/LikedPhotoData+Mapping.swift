@@ -21,4 +21,13 @@ extension LikedPhotoData {
             likedAt: timestamp ?? .init()
         )
     }
+    
+    func fromDomain(_ likedPhoto: LikedPhoto) {
+        self.id = Int64(likedPhoto.id)
+        self.width = Int64(likedPhoto.width)
+        self.height = Int64(likedPhoto.height)
+        self.imageDescription = likedPhoto.description
+        self.photographerName = likedPhoto.photographerName
+        self.timestamp = likedPhoto.likedAt
+    }
 }
