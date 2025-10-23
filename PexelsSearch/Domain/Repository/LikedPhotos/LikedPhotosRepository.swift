@@ -8,9 +8,14 @@
 
 import Combine
 
+enum LikedPhotoRepositoryError: Error {
+    case notFound
+    case unexpected(Error)
+}
+
 protocol LikedPhotosRepository {
     func create(_ newLikedPhoto: LikedPhoto)
-    func read(_ id: Int) -> AnyPublisher<LikedPhoto, Never>
-    func readAll() -> AnyPublisher<[LikedPhoto], Never>
+    func read(_ id: Int) -> AnyPublisher<LikedPhoto, LikedPhotoRepositoryError>
+    func readAll() -> AnyPublisher<[LikedPhoto], LikedPhotoRepositoryError>
     func delete(_ id: Int)
 }
