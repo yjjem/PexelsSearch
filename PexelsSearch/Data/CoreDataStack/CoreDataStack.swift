@@ -12,8 +12,8 @@ final class CoreDataStack {
     
     // MARK: Property(s)
     
-    var context: NSManagedObjectContext {
-        return container.viewContext
+    var backgroundContext: NSManagedObjectContext {
+        return container.newBackgroundContext()
     }
     
     private let container: NSPersistentContainer
