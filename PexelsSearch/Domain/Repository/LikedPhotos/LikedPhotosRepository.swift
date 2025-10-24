@@ -14,10 +14,10 @@ enum LikedPhotoRepositoryError: Error {
 }
 
 protocol LikedPhotosRepository {
-    func create(_ newLikedPhoto: LikedPhoto)
-    func read(_ id: Int) -> AnyPublisher<LikedPhoto, LikedPhotoRepositoryError>
-    func readAll() -> AnyPublisher<[LikedPhoto], LikedPhotoRepositoryError>
-    func delete(_ id: Int)
+    func like(_ photo: Photo)
+    func dislike(_ id: Int)
+    func checkIsLiked(_ id: Int) -> AnyPublisher<Bool, Never>
+    func allLiked() -> AnyPublisher<[LikedPhoto], Never>
 }
 
 final class DefaultLikedPhotoRepository: LikedPhotosRepository {
@@ -32,31 +32,26 @@ final class DefaultLikedPhotoRepository: LikedPhotosRepository {
     
     // MARK: Function(s)
     
-    func create(_ newLikedPhoto: LikedPhoto) {
-        try? likedPhotoStorage.create(newLikedPhoto)
+    func like(_ photo: Photo) {
+        try? likedPhotoStorage.create(LikedPhoto(photo: photo))
     }
     
-    func read(_ id: Int) -> AnyPublisher<LikedPhoto, LikedPhotoRepositoryError> {
-        guard let likedPhoto = try? likedPhotoStorage.read(id: id)?.toDomain()  else {
-            return Fail(error: LikedPhotoRepositoryError.notFound)
-                .eraseToAnyPublisher()
+    func checkIsLiked(_ id: Int) -> AnyPublisher<Bool, Never> {
+        guard let _ = try? likedPhotoStorage.read(id: id)  else {
+            return Just(false).eraseToAnyPublisher()
         }
-        return Just(likedPhoto)
-            .setFailureType(to: LikedPhotoRepositoryError.self)
-            .eraseToAnyPublisher()
+        return Just(true).eraseToAnyPublisher()
     }
     
-    func readAll() -> AnyPublisher<[LikedPhoto], LikedPhotoRepositoryError> {
+    func allLiked() -> AnyPublisher<[LikedPhoto], Never> {
         guard let allLikedPhotos = try? likedPhotoStorage.readAll() else {
-            return Fail(error: LikedPhotoRepositoryError.notFound)
-                .eraseToAnyPublisher()
+            return Empty().eraseToAnyPublisher()
         }
         return Just(allLikedPhotos.map { $0.toDomain() })
-            .setFailureType(to: LikedPhotoRepositoryError.self)
             .eraseToAnyPublisher()
     }
     
-    func delete(_ id: Int) {
+    func dislike(_ id: Int) {
         try? likedPhotoStorage.delete(id: id)
     }
 }

@@ -8,7 +8,7 @@
 import Combine
 
 protocol LikePhotoUseCase {
-    func execute(_ photoID: Int)
+    func execute(_ photoID: Int) -> AnyPublisher<Bool, Never>
 }
 
 final class DefaultLikePhotoUseCase: LikePhotoUseCase {
@@ -26,16 +26,11 @@ final class DefaultLikePhotoUseCase: LikePhotoUseCase {
     
     // MARK: Function(s)
     
-    func execute(_ photoID: Int) {
-        photoRepository
-            .fetchPhoto(by: photoID)
-            .map { LikedPhoto(photo: $0) }
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { [weak self] newLikedPhoto in
-                    self?.repository.create(newLikedPhoto)
-                }
-            )
-            .store(in: &cancelBag)
+    func execute(_ photoID: Int) -> AnyPublisher<Bool, Never> {
+        photoRepository.fetchPhoto(by: photoID)
+            .assertNoFailure()
+            .map { self.repository.like($0) }
+            .flatMap { self.repository.checkIsLiked(photoID) }
+            .eraseToAnyPublisher()
     }
 }

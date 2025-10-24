@@ -25,9 +25,6 @@ final class DefaultIsPhotoLikedUseCase: IsPhotoLikedUseCase {
     // MARK: Function(s)
     
     func execute(id: Int) -> AnyPublisher<Bool, Never> {
-        return repository.read(id)
-            .map { _ in true }
-            .replaceError(with: false)
-            .eraseToAnyPublisher()
+        return repository.checkIsLiked(id)
     }
 }
