@@ -15,6 +15,7 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     private enum Metrics {
         static let filterSymbolImageName = "line.3.horizontal.decrease.circle"
         static let scopeButtonTitles = ["Photo"]
+        static let footerLoadingIndicatorHeight: CGFloat = 80
     }
     
     struct Dependency {
@@ -171,7 +172,7 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
         let footer = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(80)
+                heightDimension: .absolute(Metrics.footerLoadingIndicatorHeight)
             ),
             elementKind: UICollectionView.elementKindSectionFooter,
             alignment: .bottom
