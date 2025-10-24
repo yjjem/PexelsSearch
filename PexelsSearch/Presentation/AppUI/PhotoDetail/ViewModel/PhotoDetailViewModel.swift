@@ -7,12 +7,17 @@
 
 
 import Combine
+import Foundation
 
 final class PhotoDetailViewModel {
     
     // MARK: Property(s)
     
     private var cancelBag = Set<AnyCancellable>()
+    private var isLiked: Bool {
+        isLikedSubject.value
+    }
+    
     private let receivedPhotoDetailSubject = CurrentValueSubject<PhotoDetailItem?, Never>(nil)
     private let isLikedSubject = CurrentValueSubject<Bool, Never>(false)
     
@@ -20,17 +25,20 @@ final class PhotoDetailViewModel {
     private let likePhotoUseCase: LikePhotoUseCase
     private let isPhotoLikedUseCase: IsPhotoLikedUseCase
     private let fetchPhotoUseCase: FetchPhotoUseCase
+    private let dislikePhotoUseCase: DislikePhotoUseCase
     
     init(
         photoIdentifier: Int,
         fetchPhotoUseCase: FetchPhotoUseCase,
         likePhotoUseCase: LikePhotoUseCase,
-        isPhotoLikedUseCase: IsPhotoLikedUseCase
+        isPhotoLikedUseCase: IsPhotoLikedUseCase,
+        dislikePhotoUseCase: DislikePhotoUseCase
     ) {
         self.photoIdentifier = photoIdentifier
         self.fetchPhotoUseCase = fetchPhotoUseCase
         self.likePhotoUseCase = likePhotoUseCase
         self.isPhotoLikedUseCase = isPhotoLikedUseCase
+        self.dislikePhotoUseCase = dislikePhotoUseCase
     }
     
     // MARK: Function(s)
@@ -53,18 +61,17 @@ final class PhotoDetailViewModel {
     }
     
     func onTapLike() {
-        isPhotoLikedUseCase
-            .execute(id: photoIdentifier)
-            .handleEvents(
-                receiveOutput: { [weak self] isLiked in
-                    guard isLiked, let photoIdentifier = self?.photoIdentifier else {
-                        return
-                    }
-                    self?.likePhotoUseCase.execute(photoIdentifier)
-                }
-            )
-            .assign(to: \.value, on: isLikedSubject)
-            .store(in: &cancelBag)
+        if isLiked {
+            dislikePhotoUseCase
+                .execute(id: photoIdentifier)
+                .assign(to: \.value, on: isLikedSubject)
+                .store(in: &self.cancelBag)
+        } else {
+            likePhotoUseCase
+                .execute(photoIdentifier)
+                .assign(to: \.value, on: isLikedSubject)
+                .store(in: &cancelBag)
+        }
     }
     
     func onTapSave() { }

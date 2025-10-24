@@ -101,6 +101,10 @@ final class SearchSceneDependencyContainer {
         return DefaultIsPhotoLikedUseCase(repository: likedPhotoRepository)
     }
     
+    func makeDislikePhotoUseCase() -> DislikePhotoUseCase {
+        return DefaultDislikePhotoUseCase(repository: likedPhotoRepository)
+    }
+    
     func makePhotoDetailViewController(
         photoIdentifier: Int,
         imageURLString: String
@@ -110,7 +114,8 @@ final class SearchSceneDependencyContainer {
                 photoIdentifier: photoIdentifier,
                 fetchPhotoUseCase: makeFetchPhotoUseCase(),
                 likePhotoUseCase: makeLikePhotoUseCase(),
-                isPhotoLikedUseCase: makeIsPhotoLikedUseCase()
+                isPhotoLikedUseCase: makeIsPhotoLikedUseCase(),
+                dislikePhotoUseCase: makeDislikePhotoUseCase()
             ),
             imageURL: imageURLString
         )
