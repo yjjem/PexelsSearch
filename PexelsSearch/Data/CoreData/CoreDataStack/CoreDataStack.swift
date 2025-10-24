@@ -30,4 +30,10 @@ final class CoreDataStack {
         }
         self.backgroundContext = container.newBackgroundContext()
     }
+    
+    func saveChangesIfExists(on context: NSManagedObjectContext) throws {
+        if context.hasChanges {
+            try context.save()
+        }
+    }
 }

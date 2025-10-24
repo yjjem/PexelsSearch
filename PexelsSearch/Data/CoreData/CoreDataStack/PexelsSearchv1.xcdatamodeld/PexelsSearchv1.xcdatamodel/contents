@@ -11,5 +11,10 @@
         <fetchedProperty name="fetchedProperty" optional="YES">
             <fetchRequest name="fetchedPropertyFetchRequest" entity="LikedPhotoData"/>
         </fetchedProperty>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
     </entity>
 </model>
