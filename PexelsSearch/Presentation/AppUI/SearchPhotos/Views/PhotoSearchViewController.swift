@@ -106,7 +106,6 @@ final class PhotoSearchViewController: UIViewController, FactorableViewControlle
     }
     
     private func configureNavigationItem() {
-        searchController.searchBar.prompt = "fuck you"
         navigationItem.preferredSearchBarPlacement = .stacked
         navigationItem.searchController = searchController
         let filterImage = UIImage(systemName: Metrics.filterSymbolImageName)?.withTintColor(.blue)
