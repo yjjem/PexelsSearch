@@ -27,6 +27,12 @@ final class SearchSceneDependencyContainer {
         )
     }()
     
+    private lazy var likedPhotoRepository: LikedPhotosRepository = DefaultLikedPhotoRepository(
+        likedPhotoStorage: CoreDataLikedPhotoStorage(
+            coreDataStack: CoreDataStack(modelName: "PexelsSearchv1")
+        )
+    )
+    
     private let dependency: Dependency
     
     init(dependency: Dependency) {
@@ -84,14 +90,27 @@ final class SearchSceneDependencyContainer {
         )
     }
     
+    func makeLikePhotoUseCase() -> LikePhotoUseCase {
+        return DefaultLikePhotoUseCase(
+            repository: likedPhotoRepository,
+            photoRepository: photoRepository
+        )
+    }
+    
+    func makeIsPhotoLikedUseCase() -> IsPhotoLikedUseCase {
+        return DefaultIsPhotoLikedUseCase(repository: likedPhotoRepository)
+    }
+    
     func makePhotoDetailViewController(
         photoIdentifier: Int,
         imageURLString: String
     ) -> PhotoDetailViewController {
         return PhotoDetailViewController.createWith(
             viewModel: PhotoDetailViewModel(
+                photoIdentifier: photoIdentifier,
                 fetchPhotoUseCase: makeFetchPhotoUseCase(),
-                photoIdentifier: photoIdentifier
+                likePhotoUseCase: makeLikePhotoUseCase(),
+                isPhotoLikedUseCase: makeIsPhotoLikedUseCase()
             ),
             imageURL: imageURLString
         )
