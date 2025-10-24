@@ -18,10 +18,7 @@ final class CoreDataStack {
     
     // MARK: Property(s)
     
-    var backgroundContext: NSManagedObjectContext {
-        return container.newBackgroundContext()
-    }
-    
+    let backgroundContext: NSManagedObjectContext
     private let container: NSPersistentContainer
     
     init(modelName: String) {
@@ -31,5 +28,6 @@ final class CoreDataStack {
                 fatalError("Failed to load \(modelName), reason: \(error.localizedDescription)")
             }
         }
+        self.backgroundContext = container.newBackgroundContext()
     }
 }
