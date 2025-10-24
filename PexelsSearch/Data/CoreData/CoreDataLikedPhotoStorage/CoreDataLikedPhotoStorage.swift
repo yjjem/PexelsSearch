@@ -22,37 +22,34 @@ final class CoreDataLikedPhotoStorage: LikedPhotoStorage {
         self.coreDataStack = coreDataStack
     }
     
-     // MARK: Function(s)
+    // MARK: Function(s)
     
     func create(_ newLikedPhoto: LikedPhoto) throws {
-        try backgroundContext.performAndWait {
-            let newLikedPhotoData = LikedPhotoData(context: backgroundContext)
-            newLikedPhotoData.fromDomain(newLikedPhoto)
-            try backgroundContext.save()
-        }
+        let newLikedPhotoData = LikedPhotoData(context: backgroundContext)
+        newLikedPhotoData.id = Int64(newLikedPhoto.id)
+        newLikedPhotoData.width = Int64(newLikedPhoto.width)
+        newLikedPhotoData.height = Int64(newLikedPhoto.height)
+        newLikedPhotoData.imageDescription = newLikedPhoto.description
+        newLikedPhotoData.photographerName = newLikedPhoto.photographerName
+        newLikedPhotoData.timestamp = newLikedPhoto.likedAt
+        try backgroundContext.save()
     }
     
     func read(id: Int) throws -> LikedPhotoData? {
-        try backgroundContext.performAndWait {
-            let fetchRequest = LikedPhotoData.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id == %d", id)
-            fetchRequest.fetchLimit = 1
-            return try backgroundContext.fetch(fetchRequest).first
-        }
+        let fetchRequest = LikedPhotoData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %d", id)
+        fetchRequest.fetchLimit = 1
+        return try backgroundContext.fetch(fetchRequest).first
     }
     
     func readAll() throws -> [LikedPhotoData] {
-        try backgroundContext.performAndWait {
-            let fetchRequest = LikedPhotoData.fetchRequest()
-            return try backgroundContext.fetch(fetchRequest)
-        }
+        let fetchRequest = LikedPhotoData.fetchRequest()
+        return try backgroundContext.fetch(fetchRequest)
     }
     
     func delete(id: Int) throws {
-        try backgroundContext.performAndWait {
-            if let toDelete = try read(id: id) {
-                backgroundContext.delete(toDelete)
-            }
-        }
+        guard let toDelete = try self.read(id: id) else { return }
+        backgroundContext.delete(toDelete)
+        try coreDataStack.saveChangesIfExists(on: backgroundContext)
     }
 }
