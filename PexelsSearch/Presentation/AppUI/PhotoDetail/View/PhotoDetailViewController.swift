@@ -59,7 +59,6 @@ final class PhotoDetailViewController: UIViewController {
         let output = viewModel?.bind()
         output?.isLikedPublisher
             .receive(on: DispatchQueue.main)
-            .print("isLiked")
             .sink { [weak self] isLiked in
                 self?.updateLikedButton(isLiked)
             }
