@@ -51,27 +51,33 @@ final class PhotoDetailViewController: UIViewController {
         configureLayoutStyle()
         configureNavigationItems()
         bindViewModel()
-        viewModel?.onViewDidLoad()
     }
     
     // MARK: Private Function(s)
+    
+    private func bindViewModel() {
+        let output = viewModel?.bind()
+        output?.isLikedPublisher
+            .receive(on: DispatchQueue.main)
+            .print("isLiked")
+            .sink { [weak self] isLiked in
+                self?.updateLikedButton(isLiked)
+            }
+            .store(in: &cancelBag)
+        output?.receivedPhotoDetail
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] photoDetail in
+                self?.displayPhotoDetails(photoDetail)
+            }
+            .store(in: &cancelBag)
+    }
     
     private func prepareImage(_ urlString: String) {
         imageView.prepareImage(urlString)
     }
     
-    private func bindViewModel() {
-        viewModel?.$photoDetailState
-            .receive(on: DispatchQueue.main)
-            .compactMap { $0 }
-            .sink { [weak self] photoDetailState in
-                self?.displayPhotoDetails(photoDetailState)
-            }
-            .store(in: &cancelBag)
-    }
-    
-    private func displayPhotoDetails(_ photoDetail: PhotoDetailState) {
-        imageView.prepareImage(photoDetail.photoURL)
+    private func displayPhotoDetails(_ photoDetail: PhotoDetailItem) {
         photoInformationView.update(photoDetail)
         scrollContentView.layoutIfNeeded()
     }
@@ -110,15 +116,13 @@ final class PhotoDetailViewController: UIViewController {
     private func configureLayoutStyle() {
         view.backgroundColor = .systemBackground
         scrollContentView.axis = .vertical
-//        scrollContentView.backgroundColor = .secondarySystemBackground
     }
     
     private func configureNavigationItems() {
         likeButton.primaryAction = onTapLikeAction()
         saveButton.primaryAction = onTapSaveAction()
-        updateLikedButton(viewModel?.isLiked ?? false)
-        updateSavedButton(viewModel?.isSaved ?? false)
-        navigationItem.rightBarButtonItems = [saveButton, likeButton]
+        updateLikedButton(false)
+        navigationItem.rightBarButtonItems = [likeButton, /*saveButton*/]
         navigationItem.largeTitleDisplayMode = .never
     }
     
@@ -139,18 +143,12 @@ final class PhotoDetailViewController: UIViewController {
     private func onTapLikeAction() -> UIAction {
         return UIAction { [weak self] action in
             self?.viewModel?.onTapLike()
-            if let isLiked = self?.viewModel?.isLiked {
-                self?.updateLikedButton(isLiked)
-            }
         }
     }
     
     private func onTapSaveAction() -> UIAction {
         return UIAction { [weak self] action in
             self?.viewModel?.onTapSave()
-            if let photoIsSaved = self?.viewModel?.isSaved {
-                self?.updateSavedButton(photoIsSaved)
-            }
         }
     }
 }

@@ -12,46 +12,68 @@ final class PhotoDetailViewModel {
     
     // MARK: Property(s)
     
-    @Published var isLiked: Bool?
-    @Published var isSaved: Bool?
-    @Published var photoDetailState: PhotoDetailState?
-    
     private var cancelBag = Set<AnyCancellable>()
-    private let fetchPhotoUseCase: FetchPhotoUseCase
-    private let photoIdentifier: Int
+    private let receivedPhotoDetailSubject = CurrentValueSubject<PhotoDetailItem?, Never>(nil)
+    private let isLikedSubject = CurrentValueSubject<Bool, Never>(false)
     
-    init(fetchPhotoUseCase: FetchPhotoUseCase, photoIdentifier: Int) {
-        self.fetchPhotoUseCase = fetchPhotoUseCase
+    private let photoIdentifier: Int
+    private let likePhotoUseCase: LikePhotoUseCase
+    private let isPhotoLikedUseCase: IsPhotoLikedUseCase
+    private let fetchPhotoUseCase: FetchPhotoUseCase
+    
+    init(
+        photoIdentifier: Int,
+        fetchPhotoUseCase: FetchPhotoUseCase,
+        likePhotoUseCase: LikePhotoUseCase,
+        isPhotoLikedUseCase: IsPhotoLikedUseCase
+    ) {
         self.photoIdentifier = photoIdentifier
+        self.fetchPhotoUseCase = fetchPhotoUseCase
+        self.likePhotoUseCase = likePhotoUseCase
+        self.isPhotoLikedUseCase = isPhotoLikedUseCase
     }
     
     // MARK: Function(s)
     
-    func onViewDidLoad() {
-        fetchPhotoUseCase.execute(for: photoIdentifier)
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { [weak self] photo in
-                    self?.photoDetailState = PhotoDetailState(
-                        photoURL: photo.source.large,
-                        photoIdentifier: photo.id,
-                        providerName: photo.photographer.name,
-                        description: photo.title,
-                        width: photo.width,
-                        height: photo.height
-                    )
-                }
-            )
+    func bind(_ input: Input = Input()) -> Output {
+        isPhotoLikedUseCase
+            .execute(id: photoIdentifier)
+            .assign(to: \.value, on: isLikedSubject)
             .store(in: &cancelBag)
+        fetchPhotoUseCase
+            .execute(for: photoIdentifier)
+            .map { PhotoDetailItem(photo: $0) }
+            .replaceError(with: nil)
+            .assign(to: \.value, on: receivedPhotoDetailSubject)
+            .store(in: &cancelBag)
+        return Output(
+            receivedPhotoDetail: receivedPhotoDetailSubject.eraseToAnyPublisher(),
+            isLikedPublisher: isLikedSubject.eraseToAnyPublisher()
+        )
     }
     
     func onTapLike() {
-        self.photoDetailState?.isLiked.toggle()
-        self.isLiked = self.photoDetailState?.isLiked
+        isPhotoLikedUseCase
+            .execute(id: photoIdentifier)
+            .handleEvents(
+                receiveOutput: { [weak self] isLiked in
+                    guard isLiked, let photoIdentifier = self?.photoIdentifier else {
+                        return
+                    }
+                    self?.likePhotoUseCase.execute(photoIdentifier)
+                }
+            )
+            .assign(to: \.value, on: isLikedSubject)
+            .store(in: &cancelBag)
     }
     
-    func onTapSave() {
-        self.photoDetailState?.isSaved.toggle()
-        self.isSaved = self.photoDetailState?.isSaved
+    func onTapSave() { }
+}
+
+extension PhotoDetailViewModel {
+    struct Input { }
+    struct Output {
+        let receivedPhotoDetail: AnyPublisher<PhotoDetailItem?, Never>
+        let isLikedPublisher: AnyPublisher<Bool, Never>
     }
 }

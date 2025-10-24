@@ -75,7 +75,7 @@ final class PhotoInformationView: UIView {
     
     // MARK: Function(s)
     
-    func update(_ photoDetail: PhotoDetailState) {
+    func update(_ photoDetail: PhotoDetailItem) {
         skeletons.forEach { $0.stopAnimating() }
         UIView.transition(
             with: self,
@@ -87,8 +87,6 @@ final class PhotoInformationView: UIView {
             self.photoSizeLabel.text = photoDetail.sizeDisplayText
             if photoDetail.description.isEmpty {
                 self.contentView.removeArrangedSubview(self.photoDescriptionLabel)
-//                self.contentView.layoutIfNeeded()
-//                self.layoutIfNeeded()
             }
         }
     }
