@@ -13,7 +13,7 @@ final class LikedPhotosViewModel {
     // MARK: Property(s)
     
     private var cancelBag = Set<AnyCancellable>()
-    private let fetchedLikedSubject = CurrentValueSubject<[LikedPhoto], Never>([])
+    private let fetchedLikedSubject = CurrentValueSubject<[LikedPhotoViewModel], Never>([])
     private let fetchAllLikedUseCase: FetchAllLikedPhotoUseCase
     
     init(fetchAllLikedUseCase: FetchAllLikedPhotoUseCase) {
@@ -25,17 +25,16 @@ final class LikedPhotosViewModel {
     func bind(_ input: Input) -> Output {
         input.onViewWillAppear
             .flatMap { [weak self] in
-                guard let self else {
-                    return Empty<[LikedPhoto], Never>().eraseToAnyPublisher()
-                }
+                guard let self else { return Empty<[LikedPhoto], Never>().eraseToAnyPublisher() }
                 return self.fetchAllLikedUseCase.execute()
+            }
+            .map { likedPhotos in
+                likedPhotos.map { LikedPhotoViewModel(likedPhoto: $0) }
             }
             .assign(to: \.value, on: fetchedLikedSubject)
             .store(in: &cancelBag)
         
-        return Output(
-            fetchedLikedPublisher: fetchedLikedSubject.eraseToAnyPublisher()
-        )
+        return Output(fetchedLikedPublisher: fetchedLikedSubject.eraseToAnyPublisher())
     }
 }
 
@@ -45,6 +44,6 @@ extension LikedPhotosViewModel {
     }
     
     struct Output {
-        let fetchedLikedPublisher: AnyPublisher<[LikedPhoto], Never>
+        let fetchedLikedPublisher: AnyPublisher<[LikedPhotoViewModel], Never>
     }
 }
