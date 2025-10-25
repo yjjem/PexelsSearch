@@ -59,8 +59,6 @@ final class PhotoSearchViewModel {
             .store(in: &cancelBag)
         
         input.fetchMorePublisher
-            .print()
-//            .throttle(for: .milliseconds(500), scheduler: RunLoop.main, latest: false)
             .combineLatest(input.searchQueryPublisher)
             .map { _, query in return query }
             .filter { !$0.isEmpty }
