@@ -27,6 +27,7 @@ final class CoreDataLikedPhotoStorage: LikedPhotoStorage {
     func create(_ newLikedPhoto: LikedPhoto) throws {
         let newLikedPhotoData = LikedPhotoData(context: backgroundContext)
         newLikedPhotoData.id = Int64(newLikedPhoto.id)
+        newLikedPhotoData.url = newLikedPhoto.url
         newLikedPhotoData.width = Int64(newLikedPhoto.width)
         newLikedPhotoData.height = Int64(newLikedPhoto.height)
         newLikedPhotoData.imageDescription = newLikedPhoto.description
