@@ -8,7 +8,8 @@
 
 import Foundation
 
-struct LikedPhotoViewModel: Hashable {
+struct LikedPhotoCellViewModel: Hashable {
+    let id: Int
     let url: String
     let description: String
     let photographerName: String
@@ -16,6 +17,7 @@ struct LikedPhotoViewModel: Hashable {
     let sizeString: String
     
     init(likedPhoto: LikedPhoto) {
+        self.id = likedPhoto.id
         self.url = likedPhoto.url
         self.likedAt = likedPhoto.likedAt
         self.description = likedPhoto.description
