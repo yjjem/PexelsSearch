@@ -7,6 +7,7 @@
 
 
 import UIKit
+import Combine
 
 final class PhotoInformationView: UIView {
     private enum Metrics {
@@ -28,25 +29,11 @@ final class PhotoInformationView: UIView {
     
     // MARK: Property(s)
     
+    private var skeletons: [SkeletonDecorator] = []
     private let contentView = UIStackView()
     private let photographerNameLabel = UILabel()
     private let photoDescriptionLabel = UILabel()
     private let photoSizeLabel = UILabel()
-    
-    private lazy var skeletons: [SkeletonDecorator] = [
-        SkeletonDecorator(
-            baseView: photographerNameLabel,
-            height: Metrics.photographerNameFont.lineHeight
-        ),
-        SkeletonDecorator(
-            baseView: photoDescriptionLabel,
-            height: Metrics.photoDescriptionFont.lineHeight
-        ),
-        SkeletonDecorator(
-            baseView: photoSizeLabel,
-            height: Metrics.photoSizeFont.lineHeight
-        )
-    ]
     
     // MARK: Override(s)
     
@@ -65,7 +52,19 @@ final class PhotoInformationView: UIView {
         super.init(frame: frame)
         buildLayout()
         configureStyle()
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard skeletons.isEmpty else {
+            return
+        }
         contentView.layoutIfNeeded()
+        skeletons = [
+            SkeletonDecorator(baseView: photographerNameLabel),
+            SkeletonDecorator(baseView: photoDescriptionLabel),
+            SkeletonDecorator(baseView: photoSizeLabel),
+        ]
         skeletons.forEach { $0.startAnimating() }
     }
     
@@ -94,18 +93,17 @@ final class PhotoInformationView: UIView {
     // MARK: Private Function(s)
     
     private func buildLayout() {
-        contentView.isLayoutMarginsRelativeArrangement = true
         withChild(contentView)
         contentView
             .withChild(photographerNameLabel)
             .withChild(photoDescriptionLabel)
             .withChild(photoSizeLabel)
             .withActivatingConstraintsSet([
-                contentView.topAnchor.constraint(equalTo: topAnchor),
-                contentView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                contentView.widthAnchor.constraint(equalTo: widthAnchor),
+                contentView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
+                contentView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor),
+                contentView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+                contentView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+                contentView.widthAnchor.constraint(equalTo: layoutMarginsGuide.widthAnchor),
                 
                 photographerNameLabel.heightAnchor.constraint(
                     equalToConstant: Metrics.photographerNameFont.lineHeight
@@ -120,20 +118,13 @@ final class PhotoInformationView: UIView {
     }
     
     private func configureStyle() {
-        contentView.spacing = Metrics.itemSpacing
         contentView.axis = .vertical
-        contentView.alignment = .top
-        contentView.distribution = .fill
-        contentView.layoutMargins = .init(
-            top: Metrics.containerEdgeSpacing,
-            left: Metrics.containerEdgeSpacing,
-            bottom: Metrics.containerEdgeSpacing,
-            right: Metrics.containerEdgeSpacing
-        )
+        contentView.alignment = .leading
+        contentView.spacing = Metrics.itemSpacing
+        photoSizeLabel.textColor = .systemGray
+        photoSizeLabel.font = Metrics.photoSizeFont
         photographerNameLabel.font = Metrics.photographerNameFont
         photoDescriptionLabel.numberOfLines = Metrics.imageDescriptionLineNumbers
         photoDescriptionLabel.font = Metrics.photoDescriptionFont
-        photoSizeLabel.font = Metrics.photoSizeFont
-        photoSizeLabel.textColor = .systemGray
     }
 }
