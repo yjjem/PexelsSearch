@@ -34,15 +34,15 @@ final class PhotoCellContentView: UIView, UIContentView {
     // MARK: Property(s)
     
     var configuration: any UIContentConfiguration {
-        didSet {
-            configure(with: configuration)
-        }
+        didSet { configure(with: configuration) }
     }
     
     private var currentConfiguration: Configuration?
-    private var cancelBag = Set<AnyCancellable>()
-    private let imageView = LoadableImageView()
+    private var imageToken: AnyCancellable?
+    private let imageView = UIImageView()
     private let nameLabel = PaddableLabel()
+    
+    private var loadableImageView: LoadingDecorator?
     
     init(configuration: UIContentConfiguration) {
         self.configuration = configuration
@@ -54,22 +54,28 @@ final class PhotoCellContentView: UIView, UIContentView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        loadableImageView = LoadingDecorator(baseView: imageView)
+        loadableImageView?.startAnimating()
+    }
     
     // MARK: Private Function(s)
     
     private func configureLayout() {
         addSubview(imageView)
-        imageView.contentMode = .scaleAspectFill
-        imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 4
+        imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: topAnchor),
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            imageView.heightAnchor
-                .constraint(equalTo: imageView.widthAnchor, multiplier: 1.0),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            imageView.widthAnchor.constraint(equalTo: widthAnchor)
         ])
     }
     
@@ -77,22 +83,20 @@ final class PhotoCellContentView: UIView, UIContentView {
         guard let configuration = configuration as? Configuration else {
             return
         }
+        guard configuration != currentConfiguration else { return }
         
-        guard configuration != currentConfiguration else {
-            return
-        }
-        
-        self.imageView.image = nil
-        ImageManager.shared
+        imageToken?.cancel()
+        imageView.image = nil
+        imageToken = ImageManager.shared
             .image(urlString: configuration.imageURL)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion:  { _ in },
-                receiveValue: { image in
-                    self.imageView.image = image
+                receiveValue: { [weak self] image in
+                    self?.loadableImageView?.stopAnimating()
+                    self?.imageView.image = image
                 }
             )
-            .store(in: &cancelBag)
         self.currentConfiguration = configuration
     }
 }
