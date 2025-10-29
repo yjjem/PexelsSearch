@@ -8,71 +8,46 @@
 
 final class SearchSceneDependencyContainer {
     
-    // MARK: Type(s)
+    // MARK: Property(s)
     
-    struct Dependency {
-        let httpClient: HTTPClient
+    private let applicationDependency: ApplicationDependencyContainer
+    
+    init(applicationDependency: ApplicationDependencyContainer) {
+        self.applicationDependency = applicationDependency
     }
     
-    // MARK: Variable(s)
+    // MARK: ViewModel(s)
     
-    private lazy var photosParameterRepository: PhotosParameterRepository = {
-        return InMemoryPhotosParameterRepository()
-    }()
-    
-    private lazy var photoRepository: PhotoRepository = {
-        return DefaultPhotoRepository(
-            photoPersistence: makeRemotePhotoPersistence(),
-            perPage: 50
-        )
-    }()
-    
-    private lazy var likedPhotoRepository: LikedPhotosRepository = DefaultLikedPhotoRepository(
-        likedPhotoStorage: CoreDataLikedPhotoStorage(
-            coreDataStack: CoreDataStack(modelName: "PexelsSearchv1")
-        )
-    )
-    
-    private let dependency: Dependency
-    
-    init(dependency: Dependency) {
-        self.dependency = dependency
-    }
-    
-    // MARK: Data
-    
-    func makeRemotePhotoPersistence() -> DefaultRemotePhotoPersistence {
-        return DefaultRemotePhotoPersistence(httpClient: dependency.httpClient)
-    }
-    
-    // MARK: UseCase
-    
-    func makeSearchPhotosUseCase() -> SearchPhotosUseCase {
-        return DefaultSearchPhotosUseCase(
-            photoRepository: photoRepository,
-            photosParameterRepository: photosParameterRepository
+    func makePhotoSearchViewModel() -> PhotoSearchViewModel {
+        return PhotoSearchViewModel(
+            searchPhotosUseCase: applicationDependency.makeSearchPhotosUseCase()
         )
     }
     
-    func makeSelectPhotosParameterUseCase() -> SelectPhotosParameterUseCase {
-        return DefaultSelectPhotosParameterUseCase(repository: photosParameterRepository)
+    func makePhotoSearchParameterViewModel() -> PhotoSearchParameterViewModel {
+        return PhotoSearchParameterViewModel(
+            selectUseCase: applicationDependency.makeSelectPhotosParameterUseCase(),
+            readUseCase: applicationDependency.makeReadPhotosParameterUseCase()
+        )
     }
     
-    func makeReadPhotosParameterUseCase() -> ReadPhotosParameterUseCase {
-        return DefaultReadPhotosParameterUseCase(repository: photosParameterRepository)
+    func makePhotoDetailViewModel(_ photoIdentifier: Int) -> PhotoDetailViewModel {
+        return PhotoDetailViewModel(
+            photoIdentifier: photoIdentifier,
+            fetchPhotoUseCase: applicationDependency.makeFetchPhotoUseCase(),
+            likePhotoUseCase: applicationDependency.makeLikePhotoUseCase(),
+            isPhotoLikedUseCase: applicationDependency.makeIsPhotoLikedUseCase(),
+            dislikePhotoUseCase: applicationDependency.makeDislikePhotoUseCase()
+        )
     }
     
-    func makeFetchPhotoUseCase() -> FetchPhotoUseCase {
-        return DefaultFetchPhotoUseCase(repository: photoRepository)
-    }
-    
-    // MARK: ViewController
+    // MARK: ViewController(s)
     
     func makePhotoSearchViewController(
         coordinator: SearchCoordinator
     ) -> PhotoSearchViewController {
         let dependency = PhotoSearchViewController.Dependency(
-            viewModel: PhotoSearchViewModel(searchPhotosUseCase: makeSearchPhotosUseCase()),
+            viewModel: makePhotoSearchViewModel(),
             coordinator: coordinator
         )
         return PhotoSearchViewController.create(dependency)
@@ -82,46 +57,19 @@ final class SearchSceneDependencyContainer {
         coordinator: SearchCoordinator
     ) -> PhotoSearchParametersViewController {
         return PhotoSearchParametersViewController.create(
-            viewModel: PhotoSearchParameterViewModel(
-                selectUseCase: makeSelectPhotosParameterUseCase(),
-                readUseCase: makeReadPhotosParameterUseCase()
-            ),
+            viewModel: makePhotoSearchParameterViewModel(),
             coordinator: coordinator
         )
-    }
-    
-    func makeLikePhotoUseCase() -> LikePhotoUseCase {
-        return DefaultLikePhotoUseCase(
-            repository: likedPhotoRepository,
-            photoRepository: photoRepository
-        )
-    }
-    
-    func makeIsPhotoLikedUseCase() -> IsPhotoLikedUseCase {
-        return DefaultIsPhotoLikedUseCase(repository: likedPhotoRepository)
-    }
-    
-    func makeDislikePhotoUseCase() -> DislikePhotoUseCase {
-        return DefaultDislikePhotoUseCase(repository: likedPhotoRepository)
-    }
-    
-    func makeFetchLikedPhotosUseCase() -> FetchAllLikedPhotoUseCase {
-        return DefaultFetchAllLikedPhotos(repository: likedPhotoRepository)
     }
     
     func makePhotoDetailViewController(
         photoIdentifier: Int,
         imageURLString: String
     ) -> PhotoDetailViewController {
-        return PhotoDetailViewController.createWith(
-            viewModel: PhotoDetailViewModel(
-                photoIdentifier: photoIdentifier,
-                fetchPhotoUseCase: makeFetchPhotoUseCase(),
-                likePhotoUseCase: makeLikePhotoUseCase(),
-                isPhotoLikedUseCase: makeIsPhotoLikedUseCase(),
-                dislikePhotoUseCase: makeDislikePhotoUseCase()
-            ),
+        let dependency = PhotoDetailViewController.Dependency(
+            viewModel: makePhotoDetailViewModel(photoIdentifier),
             imageURL: imageURLString
         )
+        return PhotoDetailViewController.create(dependency)
     }
 }

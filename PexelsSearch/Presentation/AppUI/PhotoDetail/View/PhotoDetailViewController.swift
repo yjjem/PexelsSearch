@@ -9,10 +9,7 @@
 import UIKit
 import Combine
 
-final class PhotoDetailViewController: UIViewController {
-    
-    // MARK: Metric(s)
-    
+final class PhotoDetailViewController: UIViewController, FactorableViewController {
     private enum Metrics {
         static let bookmarkSymbolName: String = "bookmark.fill"
         static let notBookMarkedSymbolName: String = "bookmark"
@@ -23,15 +20,20 @@ final class PhotoDetailViewController: UIViewController {
         static let scrollViewVerticalPadding: CGFloat = 10
     }
     
+    struct Dependency {
+        let viewModel: PhotoDetailViewModel
+        let imageURL: String
+    }
+    
     // MARK: Property(s)
     
     private var viewModel: PhotoDetailViewModel?
     private var cancelBag = Set<AnyCancellable>()
     
-    static func createWith(viewModel: PhotoDetailViewModel, imageURL: String) -> PhotoDetailViewController {
+    static func create(_ dependency: Dependency) -> PhotoDetailViewController {
         let photoDetailView = PhotoDetailViewController()
-        photoDetailView.prepareImage(imageURL)
-        photoDetailView.viewModel = viewModel
+        photoDetailView.prepareImage(dependency.imageURL)
+        photoDetailView.viewModel = dependency.viewModel
         return photoDetailView
     }
     
@@ -96,32 +98,25 @@ final class PhotoDetailViewController: UIViewController {
             .withChild(imageView)
             .withChild(photoInformationView)
             .withActivatingConstraintsSet([
-                scrollContentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-                scrollContentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-                scrollContentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-                scrollContentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+                scrollContentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+                scrollContentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+                scrollContentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+                scrollContentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
                 scrollContentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-            ])
-        
-        imageView
-            .withActivatingConstraintsSet([
-                imageView.widthAnchor.constraint(equalTo: scrollContentView.widthAnchor),
-                imageView.topAnchor.constraint(equalTo: scrollContentView.topAnchor),
-                imageView.leadingAnchor.constraint(equalTo: scrollContentView.leadingAnchor),
-                imageView.trailingAnchor.constraint(equalTo: scrollContentView.trailingAnchor),
             ])
     }
     
     private func configureLayoutStyle() {
         view.backgroundColor = .systemBackground
         scrollContentView.axis = .vertical
+        scrollView.showsHorizontalScrollIndicator = false
     }
     
     private func configureNavigationItems() {
         likeButton.primaryAction = onTapLikeAction()
         saveButton.primaryAction = onTapSaveAction()
         updateLikedButton(false)
-        navigationItem.rightBarButtonItems = [likeButton, /*saveButton*/]
+        navigationItem.rightBarButtonItems = [likeButton]
         navigationItem.largeTitleDisplayMode = .never
     }
     
