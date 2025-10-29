@@ -10,21 +10,14 @@ import UIKit
 import Combine
 
 final class AppCoordinator: Coordinator {
-    
-    // MARK: Type(s)
-    
     typealias RootViewController = UITabBarController
     
     // MARK: Property(s)
     
-    var id: ObjectIdentifier {
-        return ObjectIdentifier(self)
-    }
+    weak var rootCoordinator: AnyCoordinator?
+    var childCoordinators: [ObjectIdentifier : AnyCoordinator] = [:]
     
-    var rootCoordinator: (any Coordinator)?
     let rootViewController: RootViewController
-    var childCoordinators: [ObjectIdentifier : any Coordinator] = [:]
-    
     private let window: UIWindow
     private let applicationDependency: ApplicationDependencyContainer
     

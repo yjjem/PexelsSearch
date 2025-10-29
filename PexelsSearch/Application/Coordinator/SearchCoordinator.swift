@@ -13,14 +13,14 @@ final class SearchCoordinator: Coordinator {
     
     // MARK: Property(s)
     
-    let rootViewController: RootViewController
-    var childCoordinators: [ObjectIdentifier : any Coordinator] = [:]
+    weak var rootCoordinator: AnyCoordinator?
+    var childCoordinators: [ObjectIdentifier : AnyCoordinator] = [:]
     
-    let rootCoordinator: (any Coordinator)?
+    let rootViewController: RootViewController
     private let searchSceneDependency: SearchSceneDependencyContainer
     
     init(
-        rootCoordinator: (any Coordinator)?,
+        rootCoordinator: AnyCoordinator?,
         searchSceneDependency: SearchSceneDependencyContainer
     ) {
         self.rootCoordinator = rootCoordinator

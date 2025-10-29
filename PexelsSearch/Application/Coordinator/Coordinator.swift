@@ -8,14 +8,17 @@
 
 import UIKit
 
+typealias AnyCoordinator = any Coordinator
+
 protocol Coordinator<RootViewController>: AnyObject {
     associatedtype RootViewController: UIViewController
     var id: ObjectIdentifier { get }
-    var rootCoordinator: (any Coordinator)? { get }
+    var rootCoordinator: AnyCoordinator? { get set }
     var rootViewController: RootViewController { get }
-    var childCoordinators: [ObjectIdentifier: any Coordinator] { get set }
+    var childCoordinators: [ObjectIdentifier: AnyCoordinator] { get set }
+    
     func start()
-    func onChildFinish(_ coordinator: any Coordinator)
+    func onChildFinish(_ coordinator: AnyCoordinator)
 }
 
 extension Coordinator {
