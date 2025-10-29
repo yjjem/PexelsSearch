@@ -43,7 +43,9 @@ final class SearchCoordinator: Coordinator {
             coordinator: self
         )
         selectParameterView.view.backgroundColor = .systemBackground
-        let selectParameterNavigation = UINavigationController(rootViewController: selectParameterView)
+        let selectParameterNavigation = UINavigationController(
+            rootViewController: selectParameterView
+        )
         rootViewController.present(selectParameterNavigation, animated: animated)
     }
     
@@ -51,7 +53,10 @@ final class SearchCoordinator: Coordinator {
         rootViewController.dismiss(animated: true)
     }
     
-    func pushPhotoDetail(_ photoListItem: PhotoListItem, transition: UIViewController.Transition?) {
+    func pushPhotoDetail(
+        _ photoListItem: PhotoListItem,
+        transition: UIViewController.Transition?
+    ) {
         let photoDetailView = searchSceneDependency.makePhotoDetailViewController(
             photoIdentifier: photoListItem.identifier,
             imageURLString: photoListItem.imageURLString
