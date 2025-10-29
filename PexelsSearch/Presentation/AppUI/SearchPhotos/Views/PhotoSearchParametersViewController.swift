@@ -36,11 +36,11 @@ final class PhotoSearchParametersViewController: UIViewController {
     
     // MARK: Property(s)
     
+    private lazy var dataSource: DataSource = createDataSource()
+    private weak var coordinator: SearchCoordinator?
     private var viewModel: PhotoSearchParameterViewModel?
-    private var coordinator: SearchCoordinator?
     private var cancelBag = Set<AnyCancellable>()
     
-    private lazy var dataSource: DataSource = createDataSource()
     private let clearFilterButton = UIBarButtonItem()
     private let collectionView = UICollectionView(frame: .zero, collectionViewLayout: .init())
     
