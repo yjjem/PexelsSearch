@@ -51,7 +51,14 @@ final class AppCoordinator: Coordinator {
             searchSceneDependency: applicationDependency.makeSearchSceneDependency()
         )
         searchCoordinator.start()
-        self.addChild(searchCoordinator)
+        addChild(searchCoordinator)
+        
+        let likedCoordinator = LikedCoordinator(
+            rootCoordinator: self,
+            likeSceneDependency: applicationDependency.makeLikeSceneDependency()
+        )
+        likedCoordinator.start()
+        addChild(likedCoordinator)
         
         let searchTab = UITab(
             title: "Search",
@@ -60,6 +67,13 @@ final class AppCoordinator: Coordinator {
         ) { tab in
             return searchCoordinator.rootViewController
         }
-        self.rootViewController.setTabs([searchTab], animated: false)
+        let likedTab = UITab(
+            title: "Liked",
+            image: UIImage(systemName: "heart.fill"),
+            identifier: "liked"
+        ) { tab in
+            return likedCoordinator.rootViewController
+        }
+        self.rootViewController.setTabs([searchTab, likedTab], animated: false)
     }
 }
